@@ -1,287 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <string.h>
-#include <math.h> 
-#include <time.h> 
-#include <allegro5/allegro.h>
-#include <allegro5/allegro_primitives.h>
-#include <allegro5/allegro_image.h>
-#include <allegro5/allegro_font.h>
-
-#define LARGURA_JANELA 1920
-#define ALTURA_JANELA  1080
-#define LARGURA_MAPA   480  
-#define ALTURA_MAPA    270  
-#define FPS          60.0
-#define ESPESSURA_PAREDE 10.0 
-
-#define MAX_PROJETEIS 10
-#define VELOCIDADE_PROJETIL 6.0
-#define COOLDOWN_TIRO 60 
-
-#define GRAVIDADE 0.3
-#define FORCA_PULO -5.2 
-
-#define MAX_SALAS 10 
-
-#define TEMP_ESTACAO 20.0
-#define TEMP_JOGADOR 36.0
-#define TEMP_INDETERMINADA 99999.0 
-#define MAX_ELEMENTOS 118
-
-enum GameState {
-    ESTADO_MENU_PRINCIPAL,
-    ESTADO_CONFIRMAR_NOVO_JOGO,
-    ESTADO_DIGITAR_NOME,
-    ESTADO_CONFIGURACOES,
-    ESTADO_RECORDES,
-    ESTADO_JOGANDO,
-    ESTADO_PAUSADO
-};
-
-enum ConfigSlot {
-    SLOT_PULAR = 0,
-    SLOT_ESQUERDA,
-    SLOT_DIREITA,
-    SLOT_ATIRAR,
-    SLOT_PEGAR,
-    SLOT_SOLTAR,
-    SLOT_ENTRAR,
-    TOTAL_SLOTS
-};
-
-enum EstadoFisico { SOLIDO, LIQUIDO, GASOSO };
-enum Direcao { DIR_ESQUERDA = 0, DIR_DIREITA = 1 }; 
-enum TipoFrame { FRAME_IDLE = 0, FRAME_BRE = 1, FRAME_WALK1 = 2, FRAME_WALK2 = 3 };
-
-enum TipoProjetil { PROJETIL_AGUA, PROJETIL_FOGO, PROJETIL_NORMAL };
-
-typedef struct {
-    float eixo_x;
-    bool pulo;        
-    bool atirando; 
-    bool acao_pegar;  
-    bool acao_soltar; 
-    bool acao_entrar; 
-    bool acao_descer; 
-    bool f3_pressionado; 
-} Input;
-
-typedef struct {
-    int tecla_pular;
-    int tecla_esquerda;
-    int tecla_direita;
-    int tecla_atirar;
-    int tecla_pegar;
-    int tecla_soltar;
-    int tecla_entrar;
-} Controles;
-
-typedef struct {
-    float x, y;
-    float w, h;             
-    float body_w, body_h;   
-    float velocidade;
-    float vel_y;        
-    bool no_chao;       
-    int direcao_atual;  
-    int cooldown;       
-    
-    ALLEGRO_BITMAP *sprites[4]; 
-    bool esta_andando;
-    int frame_atual;       
-    int tempo_animacao;    
-    
-    bool possui_arma; 
-} Jogador;
-
-typedef struct {
-    float x, y; 
-    float w, h; 
-    int sala; 
-    bool atravessavel; 
-} Plataforma;
-
-typedef struct {
-    float x, y;
-    float w, h;
-    int sala;
-    int direcao; 
-} Escada;
-
-typedef struct {
-    float x, y;
-    float w, h;
-    int sala_origem; 
-    int destino_sala;
-    bool jogador_perto;
-    int timer_animacao; 
-    int tipo; // NOVO: Define qual sprite carregar (0 = Padrão, 1 = Emergência)
-} Porta;
-
-typedef struct {
-    float x, y;
-    float vel_y; 
-    float raio_interacao; 
-    bool no_chao;  
-    int sala_origem;       
-    ALLEGRO_BITMAP *sprite;
-} Item;
-
-typedef struct {
-    float x, y;
-    float vel_x; 
-    bool ativo;         
-    int tipo; 
-} Projetil;
-
-typedef struct {
-    int numero_atomico;
-    char simbolo[5];
-    char nome[30];
-    int periodo;
-    char grupo_familia[50];
-    char categoria[50];
-    int estado_fisico_20C;
-    bool magnetico;
-    bool radioativo;
-    float ponto_fusao;      
-    float ponto_ebulicao;   
-    float pontos_de_vida_dureza; 
-} DadosElemento;
-
-DadosElemento tabela_periodica[MAX_ELEMENTOS + 1]; 
-
-typedef struct {
-    float x, y;
-    float w, h; 
-    
-    float velocidade;
-    float vel_y;
-    float vel_x_atual; 
-    bool no_chao;
-    
-    int sala_origem;        
-    float alvo_x;           
-    
-    float raio_visao;       
-    
-    int numero_atomico; 
-    
-    float temperatura;      
-    bool recebendo_calor;   
-    int estado_atual;       
-    ALLEGRO_COLOR cor;
-
-    ALLEGRO_BITMAP *sprites_normal[5]; 
-    ALLEGRO_BITMAP *sprites_bre[5]; 
-    int frame_atual;        
-    int tempo_animacao;
-    int frame_animacao; 
-    int direcao_atual; 
-    int timer_resfriamento;
-
-    int timer_agro;      
-    int timer_patrulha;  
-} Inimigo;
-
-void carregar_controles_padrao(Controles *c) {
-    c->tecla_pular = ALLEGRO_KEY_SPACE;
-    c->tecla_esquerda = ALLEGRO_KEY_A;
-    c->tecla_direita = ALLEGRO_KEY_D;
-    c->tecla_atirar = ALLEGRO_KEY_F;
-    c->tecla_pegar = ALLEGRO_KEY_E;
-    c->tecla_soltar = ALLEGRO_KEY_Q;
-    c->tecla_entrar = ALLEGRO_KEY_W;
-}
-
-void salvar_jogo(char *nome, int sala, float x, float y, bool possui_arma) {
-    FILE *f = fopen("save.dat", "w");
-    if (f) {
-        fprintf(f, "%s\n%d\n%f\n%f\n%d\n", nome, sala, x, y, possui_arma ? 1 : 0);
-        fclose(f);
-    }
-}
-
-bool carregar_jogo(char *nome, int *sala, float *x, float *y, bool *possui_arma) {
-    FILE *f = fopen("save.dat", "r");
-    if (f) {
-        int arma_temp = 0;
-        if (fscanf(f, "%29s\n%d\n%f\n%f\n%d", nome, sala, x, y, &arma_temp) == 5) {
-            *possui_arma = (arma_temp == 1);
-            fclose(f);
-            return true;
-        }
-        fclose(f);
-    }
-    return false;
-}
-
-char* proximo_campo_csv(char **cursor) {
-    if (!*cursor) return NULL;
-    char *inicio = *cursor;
-    char *virgula = strchr(inicio, ',');
-    if (virgula) {
-        *virgula = '\0';
-        *cursor = virgula + 1;
-    } else {
-        char *newline = strpbrk(inicio, "\r\n");
-        if (newline) *newline = '\0';
-        *cursor = NULL; 
-    }
-    return inicio;
-}
-
-void carregar_tabela_periodica(const char *caminho_arquivo) {
-    FILE *file = fopen(caminho_arquivo, "r");
-    if (!file) {
-        printf("Aviso: 'elementos.csv' nao encontrado. Usando fallbacks.\n");
-        tabela_periodica[31].numero_atomico = 31;
-        tabela_periodica[31].ponto_fusao = 29.8;
-        return;
-    }
-
-    char linha[1024];
-    fgets(linha, sizeof(linha), file); 
-
-    while (fgets(linha, sizeof(linha), file)) {
-        char *cursor = linha;
-        DadosElemento e;
-
-        e.numero_atomico = atoi(proximo_campo_csv(&cursor));
-        strcpy(e.simbolo, proximo_campo_csv(&cursor) ? "" : ""); 
-        strcpy(e.nome, proximo_campo_csv(&cursor) ? "" : "");
-        e.periodo = atoi(proximo_campo_csv(&cursor));
-        strcpy(e.grupo_familia, proximo_campo_csv(&cursor) ? "" : "");
-        strcpy(e.categoria, proximo_campo_csv(&cursor) ? "" : "");
-        
-        char *str_estado = proximo_campo_csv(&cursor);
-        if (str_estado && (strcmp(str_estado, "Sólido") == 0 || strcmp(str_estado, "Solido") == 0)) e.estado_fisico_20C = SOLIDO;
-        else if (str_estado && (strcmp(str_estado, "Líquido") == 0 || strcmp(str_estado, "Liquido") == 0)) e.estado_fisico_20C = LIQUIDO;
-        else e.estado_fisico_20C = GASOSO;
-
-        char *str_mag = proximo_campo_csv(&cursor);
-        e.magnetico = (str_mag && strcmp(str_mag, "Sim") == 0);
-
-        char *str_rad = proximo_campo_csv(&cursor);
-        e.radioativo = (str_rad && strcmp(str_rad, "Sim") == 0);
-
-        char *str_fusao = proximo_campo_csv(&cursor);
-        e.ponto_fusao = (str_fusao && strlen(str_fusao) > 0) ? atof(str_fusao) : TEMP_INDETERMINADA;
-
-        char *str_ebulicao = proximo_campo_csv(&cursor);
-        e.ponto_ebulicao = (str_ebulicao && strlen(str_ebulicao) > 0) ? atof(str_ebulicao) : TEMP_INDETERMINADA;
-
-        char *str_hp = proximo_campo_csv(&cursor);
-        e.pontos_de_vida_dureza = (str_hp && strlen(str_hp) > 0) ? atof(str_hp) : 100.0;
-
-        if (e.numero_atomico > 0 && e.numero_atomico <= MAX_ELEMENTOS) {
-            tabela_periodica[e.numero_atomico] = e;
-        }
-    }
-    fclose(file);
-}
+#include "elementos.h"
 
 int main(void) {
     srand(time(NULL)); 
@@ -302,8 +19,7 @@ int main(void) {
     int opcao_config = 0; 
     int slot_sendo_remapeado = -1; 
 
-    char nome_jogador[30] = "";
-    int recorde_fase = 3; 
+    char nome_jogador[30] = ""; 
 
     Controles controles;
     carregar_controles_padrao(&controles);
@@ -332,61 +48,61 @@ int main(void) {
     al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
 
     fonte = al_create_builtin_font();
-    carregar_tabela_periodica("elementos.csv");
+    carregar_tabela_periodica("assets/elementos.csv");
 
     ALLEGRO_BITMAP *backgrounds[MAX_SALAS];
     for (int i = 0; i < MAX_SALAS; i++) {
         char path[128];
-        sprintf(path, "sprites/background/fundo_%d.png", i); 
+        sprintf(path, "assets/sprites/background/fundo_%d.png", i);
         backgrounds[i] = al_load_bitmap(path);
     }
 
-    ALLEGRO_BITMAP *sprite_porta_fechada = al_load_bitmap("sprites/background/door_closed.png");
-    ALLEGRO_BITMAP *sprite_porta_meio = al_load_bitmap("sprites/background/door_open1.png");
-    ALLEGRO_BITMAP *sprite_porta_aberta = al_load_bitmap("sprites/background/door_open2.png");
-    
-    // SPRITES DA PORTA DE EMERGÊNCIA
-    ALLEGRO_BITMAP *sprite_porta_exit_fechada = al_load_bitmap("sprites/background/door_exit_closed.png");
-    ALLEGRO_BITMAP *sprite_porta_exit_meio = al_load_bitmap("sprites/background/door_exit_open1.png");
-    ALLEGRO_BITMAP *sprite_porta_exit_aberta = al_load_bitmap("sprites/background/door_exit_open2.png");
-    
-    ALLEGRO_BITMAP *sprite_chao = al_load_bitmap("sprites/background/chao.png");
-    ALLEGRO_BITMAP *sprite_escada = al_load_bitmap("sprites/escada.png");
-    ALLEGRO_BITMAP *sprite_prop1 = al_load_bitmap("sprites/prop1.png"); 
+    ALLEGRO_BITMAP *sprite_porta_fechada = al_load_bitmap("assets/sprites/background/door_closed.png");
+    ALLEGRO_BITMAP *sprite_porta_meio = al_load_bitmap("assets/sprites/background/door_open1.png");
+    ALLEGRO_BITMAP *sprite_porta_aberta = al_load_bitmap("assets/sprites/background/door_open2.png");
 
-    Jogador faxineiro = { 
-        32.0, 127.0 - (52.0 / 2.0), 
-        10.0, 4.0,   
-        16.0, 52.0,  
-        2.5, 0.0, true, DIR_DIREITA, 0 
+    // SPRITES DA PORTA DE EMERGÊNCIA
+    ALLEGRO_BITMAP *sprite_porta_exit_fechada = al_load_bitmap("assets/sprites/background/door_exit_closed.png");
+    ALLEGRO_BITMAP *sprite_porta_exit_meio = al_load_bitmap("assets/sprites/background/door_exit_open1.png");
+    ALLEGRO_BITMAP *sprite_porta_exit_aberta = al_load_bitmap("assets/sprites/background/door_exit_open2.png");
+
+    ALLEGRO_BITMAP *sprite_chao = al_load_bitmap("assets/sprites/background/chao.png");
+    ALLEGRO_BITMAP *sprite_escada = al_load_bitmap("assets/sprites/escada.png");
+    ALLEGRO_BITMAP *sprite_prop1 = al_load_bitmap("assets/sprites/prop1.png");
+
+    Jogador faxineiro = {
+        32.0, 127.0 - (52.0 / 2.0),
+        10.0, 4.0,
+        16.0, 52.0,
+        2.5, 0.0, true, DIR_DIREITA, 0
     };
     faxineiro.esta_andando = false;
     faxineiro.frame_atual = 0;
     faxineiro.tempo_animacao = 0;
-    faxineiro.possui_arma = false; 
+    faxineiro.possui_arma = false;
 
-    faxineiro.sprites[FRAME_IDLE]  = al_load_bitmap("sprites/front_idle.png");
-    faxineiro.sprites[FRAME_BRE]   = al_load_bitmap("sprites/front_bre.png");
-    faxineiro.sprites[FRAME_WALK1] = al_load_bitmap("sprites/front_walk1.png");
-    faxineiro.sprites[FRAME_WALK2] = al_load_bitmap("sprites/front_walk2.png");
+    faxineiro.sprites[FRAME_IDLE]  = al_load_bitmap("assets/sprites/front_idle.png");
+    faxineiro.sprites[FRAME_BRE]   = al_load_bitmap("assets/sprites/front_bre.png");
+    faxineiro.sprites[FRAME_WALK1] = al_load_bitmap("assets/sprites/front_walk1.png");
+    faxineiro.sprites[FRAME_WALK2] = al_load_bitmap("assets/sprites/front_walk2.png");
     bool tem_sprites = (faxineiro.sprites[FRAME_IDLE] != NULL);
 
     #define TOTAL_PLATAFORMAS 7
     Plataforma mundo_plataformas[TOTAL_PLATAFORMAS] = {
-        { 0, 127, 240.0, 8, 0, false },  
-        { 0, 254, LARGURA_MAPA, 16, 1, false }, 
+        { 0, 127, 240.0, 8, 0, false },
+        { 0, 254, LARGURA_MAPA, 16, 1, false },
         { 192, 190, 288, 8, 1, true },
         { 0, 126, 160, 8, 1, true },
-        { 160, 158, 32, 8, 1, true },    
-        { 0, 254, LARGURA_MAPA, 16, 2, false }  
+        { 160, 158, 32, 8, 1, true },
+        { 0, 254, LARGURA_MAPA, 16, 2, false }
     };
 
     #define TOTAL_PORTAS 6
     Porta mundo_portas[TOTAL_PORTAS] = {
         // Formato: x, y, w, h, sala_origem, destino_sala, jogador_perto, timer_animacao, TIPO (0=Padrão, 1=Emergência)
-        { 171, 31, 64, 96, 0, 1, false, 0, 0 },                
-        { 0, 158, 64, 96, 1, 0, false, 0, 0 }, 
-        { 416, 94, 64, 96, 1, 2, false, 0, 0 }, 
+        { 171, 31, 64, 96, 0, 1, false, 0, 0 },
+        { 0, 158, 64, 96, 1, 0, false, 0, 0 },
+        { 416, 94, 64, 96, 1, 2, false, 0, 0 },
         { 0, 158, 64, 96, 2, 1, false, 0, 0 },
         { 416, 158, 64, 96, 2, 3, false, 0, 0 },
         // NOVO: Porta de Emergência no meio da Sala 2 (voltando pra sala 1)
@@ -399,30 +115,30 @@ int main(void) {
         { 160, 126, 32, 32, 1, -1 }
     };
 
-    Item arma_mop = { 62.0, 127.0, 0.0, 30.0, true, 0, NULL }; 
-    arma_mop.sprite = al_load_bitmap("sprites/mop.png");
-    ALLEGRO_BITMAP *sprite_water = al_load_bitmap("sprites/water.png");
+    Item arma_mop = { 62.0, 127.0, 0.0, 30.0, true, 0, NULL };
+    arma_mop.sprite = al_load_bitmap("assets/sprites/mop.png");
+    ALLEGRO_BITMAP *sprite_water = al_load_bitmap("assets/sprites/water.png");
 
-    Inimigo anomalia = { 
-        100, 254.0 - (30.0 / 2.0), 40.0, 30.0, 
-        0.5, 0.0, 0.0, true, 
-        1, 0.0, 
-        180.0, 
-        31, 
-        TEMP_ESTACAO, false, SOLIDO, al_map_rgb(210, 210, 220), 
-        {NULL, NULL, NULL, NULL, NULL}, 
-        {NULL, NULL, NULL, NULL, NULL}, 
+    Inimigo anomalia = {
+        100, 254.0 - (30.0 / 2.0), 40.0, 30.0,
+        0.5, 0.0, 0.0, true,
+        1, 0.0,
+        180.0,
+        31,
+        TEMP_ESTACAO, false, SOLIDO, al_map_rgb(210, 210, 220),
+        {NULL, NULL, NULL, NULL, NULL},
+        {NULL, NULL, NULL, NULL, NULL},
         0, 0, 0,
         DIR_DIREITA, 0,
-        0, 0 
+        0, 0
     };
-    
+
     for (int i = 0; i < 5; i++) {
         char path[64];
-        sprintf(path, "sprites/galio_%d.png", i + 1);
+        sprintf(path, "assets/sprites/galio_%d.png", i + 1);
         anomalia.sprites_normal[i] = al_load_bitmap(path);
 
-        sprintf(path, "sprites/galio_%d_bre.png", i + 1);
+        sprintf(path, "assets/sprites/galio_%d_bre.png", i + 1);
         anomalia.sprites_bre[i] = al_load_bitmap(path);
     }
 
@@ -443,8 +159,6 @@ int main(void) {
         ALLEGRO_EVENT evento;
         al_wait_for_event(fila_eventos, &evento);
 
-        float limite_mapa_x = (sala_atual == 0) ? (LARGURA_MAPA / 2.0) : LARGURA_MAPA;
-        float limite_mapa_y = (sala_atual == 0) ? (ALTURA_MAPA / 2.0) : ALTURA_MAPA;
 
         if (evento.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
             rodando = false;
@@ -1088,6 +802,7 @@ int main(void) {
                         }
                     }
 
+                    float limite_mapa_x = (sala_atual == 0) ? (LARGURA_MAPA / 2.0) : LARGURA_MAPA;
                     faxineiro.x = futuro_x;
                     if (input.eixo_x > 0) faxineiro.direcao_atual = DIR_DIREITA; else if (input.eixo_x < 0) faxineiro.direcao_atual = DIR_ESQUERDA;
 
