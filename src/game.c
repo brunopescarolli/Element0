@@ -82,43 +82,46 @@ bool game_init(Game *game) {
         { 0, 254, LARGURA_MAPA, 16, 22, false },
         { 0, 254, LARGURA_MAPA, 16, 23, false },
         { 0, 254, LARGURA_MAPA, 16, 24, false },
-        { 0, 254, LARGURA_MAPA, 16, 25, false }
+        { 0, 254, LARGURA_MAPA, 16, 25, false },
+        { 0, 254, LARGURA_MAPA, 16, 26, false },
+        { 0, 254, LARGURA_MAPA, 16, 27, false },
+        { 0, 254, LARGURA_MAPA, 16, 28, false },
+        { 0, 254, LARGURA_MAPA, 16, 29, false },
+        { 0, 254, LARGURA_MAPA, 16, 30, false },
+        { 0, 254, LARGURA_MAPA, 16, 31, false }
     };
     for (int i = 0; i < TOTAL_PLATAFORMAS; i++) game->mundo_plataformas[i] = temp_plat[i];
 
     Porta temp_porta[TOTAL_PORTAS] = {
-        // Sala 0: Limpeza
+        // Sala 0: Limpeza (Andar 5)
         { 171, 31, 64, 96, 0, 1, false, 0, 0 },
 
-        // Sala 1: Armazem geral
+        // Sala 1: Armazem geral (Andar 5)
         { 0, 158, 64, 96, 1, 0, false, 0, 0 },
         { 416, 94, 64, 96, 1, 2, false, 0, 0 },
 
-        // Sala 2: Hall 5 (Andar 5)
+        // Sala 2: Hall 5 (Andar 5) - 1 saida de emergencia para Escadaria 5 (30)
         { 0, 158, 64, 96, 2, 1, false, 0, 0 },
-        { 96, 158, 64, 96, 2, 5, false, 0, 1 },
-        { 320, 158, 64, 96, 2, 3, false, 0, 1 },
+        { 320, 158, 64, 96, 2, 30, false, 0, 1 },
         { 416, 158, 64, 96, 2, 4, false, 0, 0 },
 
-        // Sala 3: Hall 4 (Andar 4)
+        // Sala 3: Hall 4 (Andar 4) - 1 saida de emergencia para Escadaria 4 (29)
         { 0, 158, 64, 96, 3, 7, false, 0, 0 },
-        { 96, 158, 64, 96, 3, 2, false, 0, 1 },
-        { 320, 158, 64, 96, 3, 6, false, 0, 1 },
+        { 320, 158, 64, 96, 3, 29, false, 0, 1 },
         { 416, 158, 64, 96, 3, 8, false, 0, 0 },
 
         // Sala 4: Deposito quimico (Andar 5)
         { 0, 158, 64, 96, 4, 2, false, 0, 0 },
         { 416, 158, 64, 96, 4, 9, false, 0, 0 },
 
-        // Sala 5: Hall 6 (Andar 6)
+        // Sala 5: Hall 6 (Andar 6) - 1 saida de emergencia para Escadaria 6 (31)
         { 0, 158, 64, 96, 5, 10, false, 0, 0 },
-        { 320, 158, 64, 96, 5, 2, false, 0, 1 },
+        { 320, 158, 64, 96, 5, 31, false, 0, 1 },
         { 416, 158, 64, 96, 5, 11, false, 0, 0 },
 
-        // Sala 6: Hall 3 (Andar 3)
+        // Sala 6: Hall 3 (Andar 3) - 1 saida de emergencia para Escadaria 3 (28)
         { 0, 158, 64, 96, 6, 13, false, 0, 0 },
-        { 96, 158, 64, 96, 6, 3, false, 0, 1 },
-        { 320, 158, 64, 96, 6, 12, false, 0, 1 },
+        { 320, 158, 64, 96, 6, 28, false, 0, 1 },
         { 416, 158, 64, 96, 6, 14, false, 0, 0 },
 
         // Sala 7: Lab solidos (Andar 4)
@@ -136,10 +139,9 @@ bool game_init(Game *game) {
         // Sala 11: Eletrica (Andar 6)
         { 0, 158, 64, 96, 11, 5, false, 0, 0 },
 
-        // Sala 12: Hall 2 (Andar 2)
+        // Sala 12: Hall 2 (Andar 2) - 1 saida de emergencia para Escadaria 2 (27)
         { 0, 158, 64, 96, 12, 16, false, 0, 0 },
-        { 96, 158, 64, 96, 12, 6, false, 0, 1 },
-        { 320, 158, 64, 96, 12, 15, false, 0, 1 },
+        { 320, 158, 64, 96, 12, 27, false, 0, 1 },
         { 416, 158, 64, 96, 12, 17, false, 0, 0 },
 
         // Sala 13: Lab liquidos (Andar 3)
@@ -148,11 +150,11 @@ bool game_init(Game *game) {
         // Sala 14: Contencao liquidos (Andar 3)
         { 0, 158, 64, 96, 14, 6, false, 0, 0 },
 
-        // Sala 15: Hall 1 (Andar 1)
+        // Sala 15: Hall 1 (Andar 1) - 1 saida de emergencia para Escadaria 1 (26)
         { 0, 158, 64, 96, 15, 19, false, 0, 0 },
-        { 96, 158, 64, 96, 15, 12, false, 0, 1 },
+        { 96, 158, 64, 96, 15, 18, false, 0, 0 },
         { 208, 158, 64, 96, 15, 20, false, 0, 0 },
-        { 320, 158, 64, 96, 15, 18, false, 0, 1 },
+        { 320, 158, 64, 96, 15, 26, false, 0, 1 },
         { 416, 158, 64, 96, 15, 21, false, 0, 0 },
 
         // Sala 16: Lab gasosos (Andar 2)
@@ -162,7 +164,7 @@ bool game_init(Game *game) {
         { 0, 158, 64, 96, 17, 12, false, 0, 0 },
 
         // Sala 18: Evacuacao (Andar 1)
-        { 96, 158, 64, 96, 18, 15, false, 0, 1 },
+        { 208, 158, 64, 96, 18, 15, false, 0, 0 },
 
         // Sala 19: Area comum (Andar 1)
         { 0, 158, 64, 96, 19, 22, false, 0, 0 },
@@ -187,7 +189,35 @@ bool game_init(Game *game) {
         { 0, 158, 64, 96, 24, 20, false, 0, 0 },
 
         // Sala 25: Quarentena (Andar 1)
-        { 0, 158, 64, 96, 25, 21, false, 0, 0 }
+        { 0, 158, 64, 96, 25, 21, false, 0, 0 },
+
+        // Sala 26: Escadaria 1 (Andar 1 - Superior: Descer e Voltar ao Hall 1)
+        { 0, 158, 64, 96, 26, 27, false, 0, 1 },
+        { 208, 158, 64, 96, 26, 15, false, 0, 1 },
+
+        // Sala 27: Escadaria 2 (Andar 2 - Intermediario: Descer, Voltar ao Hall 2 e Subir)
+        { 0, 158, 64, 96, 27, 28, false, 0, 1 },
+        { 208, 158, 64, 96, 27, 12, false, 0, 1 },
+        { 416, 158, 64, 96, 27, 26, false, 0, 1 },
+
+        // Sala 28: Escadaria 3 (Andar 3 - Intermediario: Descer, Voltar ao Hall 3 e Subir)
+        { 0, 158, 64, 96, 28, 29, false, 0, 1 },
+        { 208, 158, 64, 96, 28, 6, false, 0, 1 },
+        { 416, 158, 64, 96, 28, 27, false, 0, 1 },
+
+        // Sala 29: Escadaria 4 (Andar 4 - Intermediario: Descer, Voltar ao Hall 4 e Subir)
+        { 0, 158, 64, 96, 29, 30, false, 0, 1 },
+        { 208, 158, 64, 96, 29, 3, false, 0, 1 },
+        { 416, 158, 64, 96, 29, 28, false, 0, 1 },
+
+        // Sala 30: Escadaria 5 (Andar 5 - Intermediario: Descer, Voltar ao Hall 5 e Subir)
+        { 0, 158, 64, 96, 30, 31, false, 0, 1 },
+        { 208, 158, 64, 96, 30, 2, false, 0, 1 },
+        { 416, 158, 64, 96, 30, 29, false, 0, 1 },
+
+        // Sala 31: Escadaria 6 (Andar 6 - Inferior: Voltar ao Hall 6 e Subir)
+        { 208, 158, 64, 96, 31, 5, false, 0, 1 },
+        { 416, 158, 64, 96, 31, 30, false, 0, 1 }
     };
     for (int i = 0; i < TOTAL_PORTAS; i++) game->mundo_portas[i] = temp_porta[i];
 

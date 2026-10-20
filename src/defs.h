@@ -26,7 +26,7 @@
 #define GRAVIDADE 0.3
 #define FORCA_PULO -5.2
 
-#define MAX_SALAS 26
+#define MAX_SALAS 32
 
 #define TEMP_ESTACAO 20.0
 #define TEMP_JOGADOR 36.0

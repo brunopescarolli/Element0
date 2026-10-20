@@ -1,5 +1,44 @@
 #include "render.h"
 
+static const char *obter_nome_sala(int sala) {
+    static const char *nomes[MAX_SALAS] = {
+        "Limpeza (Andar 5)",
+        "Armazem geral (Andar 5)",
+        "Hall 5 (Andar 5)",
+        "Hall 4 (Andar 4)",
+        "Deposito quimico (Andar 5)",
+        "Hall 6 (Andar 6)",
+        "Hall 3 (Andar 3)",
+        "Lab solidos (Andar 4)",
+        "Contencao solidos (Andar 4)",
+        "Entrada/saida carga (Andar 5)",
+        "Estufa/reciclagem (Andar 6)",
+        "Eletrica (Andar 6)",
+        "Hall 2 (Andar 2)",
+        "Lab liquidos (Andar 3)",
+        "Contencao liquidos (Andar 3)",
+        "Hall 1 (Andar 1)",
+        "Lab gasosos (Andar 2)",
+        "Contencao gasosos (Andar 2)",
+        "Evacuacao (Andar 1)",
+        "Area comum (Andar 1)",
+        "Dormitorios (Andar 1)",
+        "Ala medica (Andar 1)",
+        "Central (Andar 1)",
+        "Refeitorio (Andar 1)",
+        "Banheiros (Andar 1)",
+        "Quarentena (Andar 1)",
+        "Escadaria 1 (Andar 1)",
+        "Escadaria 2 (Andar 2)",
+        "Escadaria 3 (Andar 3)",
+        "Escadaria 4 (Andar 4)",
+        "Escadaria 5 (Andar 5)",
+        "Escadaria 6 (Andar 6)"
+    };
+    if (sala >= 0 && sala < MAX_SALAS) return nomes[sala];
+    return "Desconhecida";
+}
+
 void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item *arma_mop,
                     Projetil *projeteis, int max_proj, Plataforma *plataformas, int total_plat,
                     Escada *escadas, int total_escadas, Porta *portas, int total_portas,
@@ -171,8 +210,28 @@ void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item 
         float body_top = (faxineiro->y + faxineiro->h / 2) - faxineiro->body_h;
         al_draw_rectangle(faxineiro->x - faxineiro->body_w / 2, body_top, faxineiro->x + faxineiro->body_w / 2, faxineiro->y + faxineiro->h / 2, al_map_rgb(0, 255, 255), 1.0);
 
-        al_draw_textf(fonte, al_map_rgb(0, 255, 0), 10, 10, ALLEGRO_ALIGN_LEFT, "Sala: %d", sala_atual);
+        for (int p = 0; p < total_portas; p++) {
+            if (portas[p].sala_origem != sala_atual) continue;
+            Porta porta = portas[p];
+            al_draw_rectangle(porta.x, porta.y, porta.x + porta.w, porta.y + porta.h, al_map_rgb(255, 200, 0), 1.0);
+            float tx = porta.x + porta.w / 2.0;
+            int align = ALLEGRO_ALIGN_CENTRE;
+            if (porta.x < 60) { tx = porta.x + 2; align = ALLEGRO_ALIGN_LEFT; }
+            else if (porta.x + porta.w > largura_camera - 60) { tx = porta.x + porta.w - 2; align = ALLEGRO_ALIGN_RIGHT; }
+            float ty = (porta.y > 14) ? (porta.y - 12) : (porta.y + 4);
+            if (sala_atual >= 26 && sala_atual <= 31) {
+                const char *acao = (porta.x < 100) ? "Descer" : ((porta.x > 300) ? "Subir" : "Voltar ao Hall");
+                al_draw_textf(fonte, al_map_rgb(255, 220, 100), tx, ty, align, "%s [%d]", acao, porta.destino_sala);
+            } else {
+                al_draw_textf(fonte, al_map_rgb(255, 220, 100), tx, ty, align, "[%d]", porta.destino_sala);
+            }
+            if (porta.jogador_perto) {
+                al_draw_textf(fonte, al_map_rgb(255, 220, 100), 10, 34, ALLEGRO_ALIGN_LEFT, "Porta -> Sala %d: %s", porta.destino_sala, obter_nome_sala(porta.destino_sala));
+            }
+        }
+
         al_draw_text(fonte, al_map_rgb(255, 255, 0), largura_camera / 2.0, 10, ALLEGRO_ALIGN_CENTRE, "DEBUG MODE");
+        al_draw_textf(fonte, al_map_rgb(0, 255, 100), 10, 22, ALLEGRO_ALIGN_LEFT, "Sala %d: %s", sala_atual, obter_nome_sala(sala_atual));
         al_draw_textf(fonte, al_map_rgb(0, 255, 255), largura_camera - 10, 10, ALLEGRO_ALIGN_RIGHT, "Ambiente: %.1f C", TEMP_ESTACAO);
         al_draw_textf(fonte, al_map_rgb(255, 150, 150), faxineiro->x, faxineiro->y - faxineiro->h / 2 - 15, ALLEGRO_ALIGN_CENTRE, "%.1f C", TEMP_JOGADOR);
 
