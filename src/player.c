@@ -10,9 +10,34 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Inimigo
 
     if (*estado_fade != 0) return;
 
+    // Verificar contato com escada vertical estilo marinheiro (direcao == 0)
+    int indice_escada_vertical = -1;
+    for (int e = 0; e < total_escadas; e++) {
+        if (escadas[e].sala != *sala_atual || escadas[e].direcao != 0) continue;
+        Escada esc = escadas[e];
+        float player_left = faxineiro->x - faxineiro->body_w / 2.0;
+        float player_right = faxineiro->x + faxineiro->body_w / 2.0;
+        float player_top = (faxineiro->y + faxineiro->h / 2.0) - faxineiro->body_h;
+        float player_bottom = faxineiro->y + faxineiro->h / 2.0;
+
+        if (player_right > esc.x && player_left < esc.x + esc.w &&
+            player_bottom > esc.y && player_top < esc.y + esc.h) {
+            indice_escada_vertical = e;
+            break;
+        }
+    }
+
+    if (indice_escada_vertical == -1) {
+        faxineiro->escalando = false;
+    } else if (!faxineiro->escalando && (input->acao_entrar || input->acao_descer)) {
+        faxineiro->escalando = true;
+        faxineiro->vel_y = 0;
+        faxineiro->no_chao = false;
+    }
+
     // Proximidade e animação das portas
     for (int i = 0; i < total_portas; i++) {
-        if (portas[i].sala_origem != *sala_atual) continue;
+        if (portas[i].sala_origem != *sala_atual || portas[i].tipo == 2) continue;
 
         bool prox_x = (faxineiro->x + faxineiro->w / 2 > portas[i].x - 15) &&
                       (faxineiro->x - faxineiro->w / 2 < portas[i].x + portas[i].w + 15);
@@ -30,11 +55,11 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Inimigo
         }
     }
 
-    // Interação de entrada nas portas
-    if (input->acao_entrar) {
+    // Interação de entrada nas portas normais (desativada durante escalada ou sobre a escada vertical)
+    if (input->acao_entrar && !faxineiro->escalando && indice_escada_vertical == -1) {
         for (int i = 0; i < total_portas; i++) {
             Porta p = portas[i];
-            if (p.sala_origem != *sala_atual) continue;
+            if (p.sala_origem != *sala_atual || p.tipo == 2) continue;
 
             float chao_porta = p.y + p.h;
             float pe_jogador = faxineiro->y + faxineiro->h / 2.0;
@@ -46,7 +71,7 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Inimigo
                 for (int j = 0; j < total_portas; j++) {
                     if (portas[j].sala_origem == p.destino_sala && portas[j].destino_sala == *sala_atual) {
                         *proximo_x = portas[j].x + (portas[j].w / 2.0);
-                        *proximo_chao_y = portas[j].y + portas[j].h;
+                        *proximo_chao_y = (portas[j].tipo == 2) ? 180.0 : (portas[j].y + portas[j].h);
                         break;
                     }
                 }
@@ -81,41 +106,128 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Inimigo
     float velocidade_atual = preso_na_poca ? (faxineiro->velocidade * 0.4) : faxineiro->velocidade;
     float vel_x_aplicada = input->eixo_x * velocidade_atual;
     float futuro_x = faxineiro->x + vel_x_aplicada;
+    float limite_mapa_x = (*sala_atual == 0) ? (LARGURA_MAPA / 2.0) : LARGURA_MAPA;
 
-    // Colisão horizontal com escadas/rampas
-    for (int e = 0; e < total_escadas; e++) {
-        if (escadas[e].sala != *sala_atual) continue;
-        Escada esc = escadas[e];
-        float pe_jogador = faxineiro->y + faxineiro->h / 2.0;
+    if (faxineiro->escalando && indice_escada_vertical != -1) {
+        Escada esc = escadas[indice_escada_vertical];
 
-        if (pe_jogador > esc.y + 4.0 && pe_jogador - faxineiro->h < esc.y + esc.h) {
-            if (esc.direcao == 1) {
-                if (vel_x_aplicada < 0 && faxineiro->x - faxineiro->w / 2.0 >= esc.x + esc.w - 5.0 && futuro_x - faxineiro->w / 2.0 < esc.x + esc.w) {
-                    futuro_x = esc.x + esc.w + faxineiro->w / 2.0;
+        if (input->eixo_x == 0) {
+            faxineiro->x = esc.x + (esc.w / 2.0);
+        } else {
+            faxineiro->x = futuro_x;
+            if (input->eixo_x > 0) faxineiro->direcao_atual = DIR_DIREITA;
+            else if (input->eixo_x < 0) faxineiro->direcao_atual = DIR_ESQUERDA;
+
+            if (!input->acao_entrar && !input->acao_descer) {
+                float pe_jogador = faxineiro->y + faxineiro->h / 2.0;
+                for (int p = 0; p < total_plat; p++) {
+                    if (plataformas[p].sala != *sala_atual) continue;
+                    if (fabs(pe_jogador - plataformas[p].y) <= 10.0) {
+                        faxineiro->y = plataformas[p].y - (faxineiro->h / 2.0);
+                        break;
+                    }
                 }
-            } else if (esc.direcao == -1) {
-                if (vel_x_aplicada > 0 && faxineiro->x + faxineiro->w / 2.0 <= esc.x + 5.0 && futuro_x + faxineiro->w / 2.0 > esc.x) {
-                    futuro_x = esc.x - faxineiro->w / 2.0;
+            }
+
+            if (faxineiro->x - faxineiro->body_w / 2.0 < 0) faxineiro->x = faxineiro->body_w / 2.0;
+            if (faxineiro->x + faxineiro->body_w / 2.0 > limite_mapa_x) faxineiro->x = limite_mapa_x - faxineiro->body_w / 2.0;
+
+            float player_left = faxineiro->x - faxineiro->body_w / 2.0;
+            float player_right = faxineiro->x + faxineiro->body_w / 2.0;
+            if (player_right <= esc.x || player_left >= esc.x + esc.w) {
+                faxineiro->escalando = false;
+            }
+        }
+
+        if (faxineiro->escalando) {
+            faxineiro->vel_y = 0;
+            faxineiro->no_chao = false;
+
+            if (input->acao_entrar) {
+                faxineiro->y -= velocidade_atual;
+            } else if (input->acao_descer) {
+                faxineiro->y += velocidade_atual;
+            }
+
+            float min_y = esc.y + faxineiro->body_h - (faxineiro->h / 2.0);
+            float max_y = esc.y + esc.h - (faxineiro->h / 2.0);
+            if (faxineiro->y < min_y) faxineiro->y = min_y;
+            if (faxineiro->y > max_y) faxineiro->y = max_y;
+
+            // Transição entre andares pelas caixas invisíveis (tipo == 2) no topo e base da escada
+            float player_left = faxineiro->x - faxineiro->body_w / 2.0;
+            float player_right = faxineiro->x + faxineiro->body_w / 2.0;
+            float player_top = (faxineiro->y + faxineiro->h / 2.0) - faxineiro->body_h;
+            float player_bottom = faxineiro->y + faxineiro->h / 2.0;
+
+            for (int i = 0; i < total_portas; i++) {
+                Porta p = portas[i];
+                if (p.sala_origem != *sala_atual || p.tipo != 2) continue;
+
+                bool colide_caixa = (player_right > p.x) && (player_left < p.x + p.w) &&
+                                    (player_bottom > p.y) && (player_top < p.y + p.h);
+                bool caixa_topo = (p.y < ALTURA_MAPA / 2.0);
+
+                if (colide_caixa && ((caixa_topo && input->acao_entrar) || (!caixa_topo && input->acao_descer))) {
+                    *estado_fade = 1;
+                    *proxima_sala = p.destino_sala;
+                    *proximo_x = p.x + (p.w / 2.0);
+                    *proximo_chao_y = 180.0;
+
+                    for (int j = 0; j < total_portas; j++) {
+                        if (portas[j].sala_origem == p.destino_sala && portas[j].destino_sala == *sala_atual) {
+                            *proximo_x = portas[j].x + (portas[j].w / 2.0);
+                            *proximo_chao_y = (portas[j].tipo == 2) ? 180.0 : (portas[j].y + portas[j].h);
+                            break;
+                        }
+                    }
+                    break;
                 }
             }
         }
     }
 
-    float limite_mapa_x = (*sala_atual == 0) ? (LARGURA_MAPA / 2.0) : LARGURA_MAPA;
-    faxineiro->x = futuro_x;
-    if (input->eixo_x > 0) faxineiro->direcao_atual = DIR_DIREITA; else if (input->eixo_x < 0) faxineiro->direcao_atual = DIR_ESQUERDA;
+    if (!faxineiro->escalando) {
+        // Colisão horizontal com escadas/rampas
+        for (int e = 0; e < total_escadas; e++) {
+            if (escadas[e].sala != *sala_atual || escadas[e].direcao == 0) continue;
+            Escada esc = escadas[e];
+            float pe_jogador = faxineiro->y + faxineiro->h / 2.0;
 
-    if (faxineiro->x - faxineiro->body_w / 2 < 0) faxineiro->x = faxineiro->body_w / 2;
-    if (faxineiro->x + faxineiro->body_w / 2 > limite_mapa_x) faxineiro->x = limite_mapa_x - faxineiro->body_w / 2;
+            if (pe_jogador > esc.y + 4.0 && pe_jogador - faxineiro->h < esc.y + esc.h) {
+                if (esc.direcao == 1) {
+                    if (vel_x_aplicada < 0 && faxineiro->x - faxineiro->w / 2.0 >= esc.x + esc.w - 5.0 && futuro_x - faxineiro->w / 2.0 < esc.x + esc.w) {
+                        futuro_x = esc.x + esc.w + faxineiro->w / 2.0;
+                    }
+                } else if (esc.direcao == -1) {
+                    if (vel_x_aplicada > 0 && faxineiro->x + faxineiro->w / 2.0 <= esc.x + 5.0 && futuro_x + faxineiro->w / 2.0 > esc.x) {
+                        futuro_x = esc.x - faxineiro->w / 2.0;
+                    }
+                }
+            }
+        }
 
-    // Gravidade e movimento vertical
-    faxineiro->vel_y += GRAVIDADE;
-    faxineiro->y += faxineiro->vel_y;
-    faxineiro->no_chao = false;
+        faxineiro->x = futuro_x;
+        if (input->eixo_x > 0) faxineiro->direcao_atual = DIR_DIREITA; else if (input->eixo_x < 0) faxineiro->direcao_atual = DIR_ESQUERDA;
 
-    // Resolução de colisões com plataformas e escadas
-    resolve_platform_collisions(faxineiro->x, &faxineiro->y, faxineiro->w, faxineiro->h, &faxineiro->vel_y, &faxineiro->no_chao, *sala_atual, plataformas, total_plat, input->acao_descer);
-    resolve_ladder_collisions(faxineiro->x, &faxineiro->y, faxineiro->w, faxineiro->h, &faxineiro->vel_y, &faxineiro->no_chao, input->eixo_x, *sala_atual, escadas, total_escadas, input->acao_descer);
+        if (faxineiro->x - faxineiro->body_w / 2 < 0) faxineiro->x = faxineiro->body_w / 2;
+        if (faxineiro->x + faxineiro->body_w / 2 > limite_mapa_x) faxineiro->x = limite_mapa_x - faxineiro->body_w / 2;
+
+        // Gravidade e movimento vertical
+        faxineiro->vel_y += GRAVIDADE;
+        faxineiro->y += faxineiro->vel_y;
+        faxineiro->no_chao = false;
+
+        // Resolução de colisões com plataformas e escadas
+        resolve_platform_collisions(faxineiro->x, &faxineiro->y, faxineiro->w, faxineiro->h, &faxineiro->vel_y, &faxineiro->no_chao, *sala_atual, plataformas, total_plat, input->acao_descer);
+        resolve_ladder_collisions(faxineiro->x, &faxineiro->y, faxineiro->w, faxineiro->h, &faxineiro->vel_y, &faxineiro->no_chao, input->eixo_x, *sala_atual, escadas, total_escadas, input->acao_descer);
+
+        if (faxineiro->y + faxineiro->h / 2.0 > ALTURA_MAPA) {
+            faxineiro->y = ALTURA_MAPA - (faxineiro->h / 2.0);
+            faxineiro->vel_y = 0;
+            faxineiro->no_chao = true;
+        }
+    }
 
     // Colisão com Inimigo (Anomalia de Gálio)
     if (*sala_atual == anomalia->sala_origem) {
@@ -126,20 +238,20 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Inimigo
             anomalia->recebendo_calor = true;
             float pe_anterior = (faxineiro->y - faxineiro->vel_y) + faxineiro->h / 2;
             float topo_inimigo = anomalia->y - anomalia->h / 2;
-            if (faxineiro->vel_y >= 0 && pe_anterior <= topo_inimigo + 0.1 && anomalia->estado_atual == SOLIDO) {
+            if (!faxineiro->escalando && faxineiro->vel_y >= 0 && pe_anterior <= topo_inimigo + 0.1 && anomalia->estado_atual == SOLIDO) {
                 faxineiro->y = topo_inimigo - faxineiro->h / 2; faxineiro->vel_y = 0; faxineiro->no_chao = true;
             }
         }
     }
 
-    // Pulo
-    if (input->pulo && faxineiro->no_chao) {
+    // Pulo (desativado enquanto estiver escalando)
+    if (!faxineiro->escalando && input->pulo && faxineiro->no_chao) {
         faxineiro->vel_y = preso_na_poca ? (FORCA_PULO * 0.7) : FORCA_PULO;
         faxineiro->no_chao = false;
     }
 
     // Animação
-    bool movendo_agora = (input->eixo_x != 0);
+    bool movendo_agora = (input->eixo_x != 0) || (faxineiro->escalando && (input->acao_entrar || input->acao_descer));
     if (movendo_agora != faxineiro->esta_andando) {
         faxineiro->esta_andando = movendo_agora;
         faxineiro->frame_atual = 0;

@@ -33,6 +33,7 @@ void resolve_ladder_collisions(float x, float *y, float w, float h, float *vel_y
     for (int e = 0; e < total_escadas; e++) {
         if (escadas[e].sala != sala) continue;
         Escada esc = escadas[e];
+        if (esc.direcao == 0) continue;
 
         bool colide_x = (x + w / 2.0 >= esc.x) && (x - w / 2.0 <= esc.x + esc.w);
         if (colide_x) {

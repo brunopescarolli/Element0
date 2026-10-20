@@ -37,6 +37,7 @@ bool game_init(Game *game) {
 
     game->sprites.sprite_chao = al_load_bitmap("assets/sprites/background/chao.png");
     game->sprites.sprite_escada = al_load_bitmap("assets/sprites/escada.png");
+    game->sprites.sprite_escada_vertical = al_load_bitmap("assets/sprites/escada_vertical.png");
     game->sprites.sprite_prop1 = al_load_bitmap("assets/sprites/prop1.png");
 
     game->faxineiro = (Jogador){
@@ -45,7 +46,7 @@ bool game_init(Game *game) {
         16.0, 52.0,
         2.5, 0.0, true, DIR_DIREITA, 0,
         {NULL, NULL, NULL, NULL},
-        false, 0, 0, false
+        false, 0, 0, false, false
     };
 
     game->faxineiro.sprites[FRAME_IDLE]  = al_load_bitmap("assets/sprites/front_idle.png");
@@ -83,12 +84,12 @@ bool game_init(Game *game) {
         { 0, 254, LARGURA_MAPA, 16, 23, false },
         { 0, 254, LARGURA_MAPA, 16, 24, false },
         { 0, 254, LARGURA_MAPA, 16, 25, false },
-        { 0, 254, LARGURA_MAPA, 16, 26, false },
-        { 0, 254, LARGURA_MAPA, 16, 27, false },
-        { 0, 254, LARGURA_MAPA, 16, 28, false },
-        { 0, 254, LARGURA_MAPA, 16, 29, false },
-        { 0, 254, LARGURA_MAPA, 16, 30, false },
-        { 0, 254, LARGURA_MAPA, 16, 31, false }
+        { 0, 180, LARGURA_MAPA, 16, 26, false },
+        { 0, 180, LARGURA_MAPA, 16, 27, false },
+        { 0, 180, LARGURA_MAPA, 16, 28, false },
+        { 0, 180, LARGURA_MAPA, 16, 29, false },
+        { 0, 180, LARGURA_MAPA, 16, 30, false },
+        { 0, 180, LARGURA_MAPA, 16, 31, false }
     };
     for (int i = 0; i < TOTAL_PLATAFORMAS; i++) game->mundo_plataformas[i] = temp_plat[i];
 
@@ -191,39 +192,45 @@ bool game_init(Game *game) {
         // Sala 25: Quarentena (Andar 1)
         { 0, 158, 64, 96, 25, 21, false, 0, 0 },
 
-        // Sala 26: Escadaria 1 (Andar 1 - Superior: Descer e Voltar ao Hall 1)
-        { 0, 158, 64, 96, 26, 27, false, 0, 1 },
-        { 208, 158, 64, 96, 26, 15, false, 0, 1 },
+        // Sala 26: Escadaria 1 (Andar 1 - Superior: Voltar ao Hall 1 a direita e caixa inferior para descer)
+        { 416, 84, 64, 96, 26, 15, false, 0, 1 },
+        { 68, 250, 24, 20, 26, 27, false, 0, 2 },
 
-        // Sala 27: Escadaria 2 (Andar 2 - Intermediario: Descer, Voltar ao Hall 2 e Subir)
-        { 0, 158, 64, 96, 27, 28, false, 0, 1 },
-        { 208, 158, 64, 96, 27, 12, false, 0, 1 },
-        { 416, 158, 64, 96, 27, 26, false, 0, 1 },
+        // Sala 27: Escadaria 2 (Andar 2 - Intermediario: Voltar ao Hall 2 a direita, caixa superior e inferior)
+        { 416, 84, 64, 96, 27, 12, false, 0, 1 },
+        { 68, 0, 24, 20, 27, 26, false, 0, 2 },
+        { 68, 250, 24, 20, 27, 28, false, 0, 2 },
 
-        // Sala 28: Escadaria 3 (Andar 3 - Intermediario: Descer, Voltar ao Hall 3 e Subir)
-        { 0, 158, 64, 96, 28, 29, false, 0, 1 },
-        { 208, 158, 64, 96, 28, 6, false, 0, 1 },
-        { 416, 158, 64, 96, 28, 27, false, 0, 1 },
+        // Sala 28: Escadaria 3 (Andar 3 - Intermediario: Voltar ao Hall 3 a direita, caixa superior e inferior)
+        { 416, 84, 64, 96, 28, 6, false, 0, 1 },
+        { 68, 0, 24, 20, 28, 27, false, 0, 2 },
+        { 68, 250, 24, 20, 28, 29, false, 0, 2 },
 
-        // Sala 29: Escadaria 4 (Andar 4 - Intermediario: Descer, Voltar ao Hall 4 e Subir)
-        { 0, 158, 64, 96, 29, 30, false, 0, 1 },
-        { 208, 158, 64, 96, 29, 3, false, 0, 1 },
-        { 416, 158, 64, 96, 29, 28, false, 0, 1 },
+        // Sala 29: Escadaria 4 (Andar 4 - Intermediario: Voltar ao Hall 4 a direita, caixa superior e inferior)
+        { 416, 84, 64, 96, 29, 3, false, 0, 1 },
+        { 68, 0, 24, 20, 29, 28, false, 0, 2 },
+        { 68, 250, 24, 20, 29, 30, false, 0, 2 },
 
-        // Sala 30: Escadaria 5 (Andar 5 - Intermediario: Descer, Voltar ao Hall 5 e Subir)
-        { 0, 158, 64, 96, 30, 31, false, 0, 1 },
-        { 208, 158, 64, 96, 30, 2, false, 0, 1 },
-        { 416, 158, 64, 96, 30, 29, false, 0, 1 },
+        // Sala 30: Escadaria 5 (Andar 5 - Intermediario: Voltar ao Hall 5 a direita, caixa superior e inferior)
+        { 416, 84, 64, 96, 30, 2, false, 0, 1 },
+        { 68, 0, 24, 20, 30, 29, false, 0, 2 },
+        { 68, 250, 24, 20, 30, 31, false, 0, 2 },
 
-        // Sala 31: Escadaria 6 (Andar 6 - Inferior: Voltar ao Hall 6 e Subir)
-        { 208, 158, 64, 96, 31, 5, false, 0, 1 },
-        { 416, 158, 64, 96, 31, 30, false, 0, 1 }
+        // Sala 31: Escadaria 6 (Andar 6 - Inferior: Voltar ao Hall 6 a direita e caixa superior para subir)
+        { 416, 84, 64, 96, 31, 5, false, 0, 1 },
+        { 68, 0, 24, 20, 31, 30, false, 0, 2 }
     };
     for (int i = 0; i < TOTAL_PORTAS; i++) game->mundo_portas[i] = temp_porta[i];
 
     Escada temp_escada[TOTAL_ESCADAS] = {
         { 192, 158, 32, 32, 1, -1 },
-        { 160, 126, 32, 32, 1, -1 }
+        { 160, 126, 32, 32, 1, -1 },
+        { 68, 0, 24, ALTURA_MAPA, 26, 0 },
+        { 68, 0, 24, ALTURA_MAPA, 27, 0 },
+        { 68, 0, 24, ALTURA_MAPA, 28, 0 },
+        { 68, 0, 24, ALTURA_MAPA, 29, 0 },
+        { 68, 0, 24, ALTURA_MAPA, 30, 0 },
+        { 68, 0, 24, ALTURA_MAPA, 31, 0 }
     };
     for (int i = 0; i < TOTAL_ESCADAS; i++) game->mundo_escadas[i] = temp_escada[i];
 
@@ -427,7 +434,7 @@ void game_run(Game *game) {
                 else if (evento.keyboard.keycode == game->controles.tecla_direita) game->input.eixo_x =  1.0;
                 else if (evento.keyboard.keycode == game->controles.tecla_pegar) game->input.acao_pegar = true;
                 else if (evento.keyboard.keycode == game->controles.tecla_soltar) game->input.acao_soltar = true;
-                else if (evento.keyboard.keycode == game->controles.tecla_entrar) game->input.acao_entrar = true;
+                else if (evento.keyboard.keycode == game->controles.tecla_entrar || evento.keyboard.keycode == ALLEGRO_KEY_W) game->input.acao_entrar = true;
                 else if (evento.keyboard.keycode == ALLEGRO_KEY_F3) game->input.f3_pressionado = true;
                 else if (evento.keyboard.keycode == ALLEGRO_KEY_B) {
                     if (game->input.f3_pressionado) game->mostrar_hitbox = !game->mostrar_hitbox;
@@ -463,7 +470,7 @@ void game_run(Game *game) {
                 else if (evento.keyboard.keycode == game->controles.tecla_direita && game->input.eixo_x > 0) game->input.eixo_x = 0.0;
                 else if (evento.keyboard.keycode == game->controles.tecla_pegar) game->input.acao_pegar = false;
                 else if (evento.keyboard.keycode == game->controles.tecla_soltar) game->input.acao_soltar = false;
-                else if (evento.keyboard.keycode == game->controles.tecla_entrar) game->input.acao_entrar = false;
+                else if (evento.keyboard.keycode == game->controles.tecla_entrar || evento.keyboard.keycode == ALLEGRO_KEY_W) game->input.acao_entrar = false;
                 else if (evento.keyboard.keycode == ALLEGRO_KEY_F3) game->input.f3_pressionado = false;
                 else if (evento.keyboard.keycode == ALLEGRO_KEY_S) game->input.acao_descer = false;
             }
@@ -648,6 +655,7 @@ void game_run(Game *game) {
                         game->faxineiro.y = game->proximo_chao_y - (game->faxineiro.h / 2.0);
                         game->faxineiro.vel_y = 0;
                         game->faxineiro.no_chao = true;
+                        game->faxineiro.escalando = false;
                         salvar_jogo(game->nome_jogador, game->sala_atual, game->faxineiro.x, game->faxineiro.y, game->faxineiro.possui_arma);
                     }
                     if (game->timer_fade >= 60) game->estado_fade = 3;
@@ -723,6 +731,7 @@ void game_cleanup(Game *game) {
     if (game->sprites.sprite_prop1) al_destroy_bitmap(game->sprites.sprite_prop1);
     if (game->sprites.sprite_chao) al_destroy_bitmap(game->sprites.sprite_chao);
     if (game->sprites.sprite_escada) al_destroy_bitmap(game->sprites.sprite_escada);
+    if (game->sprites.sprite_escada_vertical) al_destroy_bitmap(game->sprites.sprite_escada_vertical);
     if (game->sprites.sprite_porta_fechada) al_destroy_bitmap(game->sprites.sprite_porta_fechada);
     if (game->sprites.sprite_porta_meio) al_destroy_bitmap(game->sprites.sprite_porta_meio);
     if (game->sprites.sprite_porta_aberta) al_destroy_bitmap(game->sprites.sprite_porta_aberta);

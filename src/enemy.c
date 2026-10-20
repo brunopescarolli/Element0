@@ -109,6 +109,7 @@ void atualizar_inimigo(Inimigo *anomalia, Jogador *faxineiro,
                 for (int e = 0; e < total_escadas; e++) {
                     if (escadas[e].sala != anomalia->sala_origem) continue;
                     Escada esc = escadas[e];
+                    if (esc.direcao == 0) continue;
                     if (borda_x >= esc.x - 5.0 && borda_x <= esc.x + esc.w + 5.0) {
                         float calc_x = borda_x;
                         if (calc_x < esc.x) calc_x = esc.x;

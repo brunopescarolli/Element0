@@ -97,6 +97,7 @@ typedef struct {
     int tempo_animacao;
 
     bool possui_arma;
+    bool escalando;
 } Jogador;
 
 typedef struct {

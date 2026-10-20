@@ -58,6 +58,7 @@ void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item 
     for (int p = 0; p < total_portas; p++) {
         if (portas[p].sala_origem != sala_atual) continue;
         Porta porta = portas[p];
+        if (porta.tipo == 2) continue;
 
         ALLEGRO_BITMAP *sprite_atual = NULL;
 
@@ -108,7 +109,24 @@ void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item 
         if (escadas[e].sala != sala_atual) continue;
         Escada esc = escadas[e];
 
-        if (sprites->sprite_escada) {
+        if (esc.direcao == 0) {
+            if (sprites->sprite_escada_vertical) {
+                float sw = al_get_bitmap_width(sprites->sprite_escada_vertical);
+                float sh = al_get_bitmap_height(sprites->sprite_escada_vertical);
+                for (float ty = 0; ty < esc.h; ty += sh) {
+                    float draw_h = (ty + sh > esc.h) ? (esc.h - ty) : sh;
+                    al_draw_scaled_bitmap(sprites->sprite_escada_vertical, 0, 0, sw, draw_h, esc.x, esc.y + ty, esc.w, draw_h, 0);
+                }
+            } else {
+                ALLEGRO_COLOR cor_aste = al_map_rgb(130, 145, 160);
+                ALLEGRO_COLOR cor_degrau = al_map_rgb(185, 200, 215);
+                al_draw_filled_rectangle(esc.x, esc.y, esc.x + 3.0, esc.y + esc.h, cor_aste);
+                al_draw_filled_rectangle(esc.x + esc.w - 3.0, esc.y, esc.x + esc.w, esc.y + esc.h, cor_aste);
+                for (float ry = esc.y + 6.0; ry < esc.y + esc.h - 2.0; ry += 12.0) {
+                    al_draw_filled_rectangle(esc.x + 3.0, ry, esc.x + esc.w - 3.0, ry + 2.0, cor_degrau);
+                }
+            }
+        } else if (sprites->sprite_escada) {
             int flag = (esc.direcao == -1) ? ALLEGRO_FLIP_HORIZONTAL : 0;
             al_draw_bitmap(sprites->sprite_escada, esc.x, esc.y, flag);
         } else {
@@ -210,18 +228,27 @@ void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item 
         float body_top = (faxineiro->y + faxineiro->h / 2) - faxineiro->body_h;
         al_draw_rectangle(faxineiro->x - faxineiro->body_w / 2, body_top, faxineiro->x + faxineiro->body_w / 2, faxineiro->y + faxineiro->h / 2, al_map_rgb(0, 255, 255), 1.0);
 
+        for (int e = 0; e < total_escadas; e++) {
+            if (escadas[e].sala != sala_atual) continue;
+            Escada esc = escadas[e];
+            al_draw_rectangle(esc.x, esc.y, esc.x + esc.w, esc.y + esc.h, al_map_rgb(100, 255, 180), 1.0);
+        }
+
         for (int p = 0; p < total_portas; p++) {
             if (portas[p].sala_origem != sala_atual) continue;
             Porta porta = portas[p];
-            al_draw_rectangle(porta.x, porta.y, porta.x + porta.w, porta.y + porta.h, al_map_rgb(255, 200, 0), 1.0);
+            ALLEGRO_COLOR cor_hit_porta = (porta.tipo == 2) ? al_map_rgb(255, 100, 255) : al_map_rgb(255, 200, 0);
+            al_draw_rectangle(porta.x, porta.y, porta.x + porta.w, porta.y + porta.h, cor_hit_porta, 1.0);
             float tx = porta.x + porta.w / 2.0;
             int align = ALLEGRO_ALIGN_CENTRE;
             if (porta.x < 60) { tx = porta.x + 2; align = ALLEGRO_ALIGN_LEFT; }
             else if (porta.x + porta.w > largura_camera - 60) { tx = porta.x + porta.w - 2; align = ALLEGRO_ALIGN_RIGHT; }
-            float ty = (porta.y > 14) ? (porta.y - 12) : (porta.y + 4);
-            if (sala_atual >= 26 && sala_atual <= 31) {
-                const char *acao = (porta.x < 100) ? "Descer" : ((porta.x > 300) ? "Subir" : "Voltar ao Hall");
-                al_draw_textf(fonte, al_map_rgb(255, 220, 100), tx, ty, align, "%s [%d]", acao, porta.destino_sala);
+            float ty = (porta.y > 14) ? (porta.y - 12) : (porta.y + porta.h + 2);
+            if (porta.tipo == 2) {
+                const char *acao = (porta.y < ALTURA_MAPA / 2.0) ? "Subir" : "Descer";
+                al_draw_textf(fonte, al_map_rgb(255, 150, 255), porta.x + porta.w + 4, (porta.y < ALTURA_MAPA / 2.0) ? (porta.y + 4) : (porta.y - 10), ALLEGRO_ALIGN_LEFT, "%s [%d]", acao, porta.destino_sala);
+            } else if (sala_atual >= 26 && sala_atual <= 31) {
+                al_draw_textf(fonte, al_map_rgb(255, 220, 100), tx, ty, align, "Voltar ao Hall [%d]", porta.destino_sala);
             } else {
                 al_draw_textf(fonte, al_map_rgb(255, 220, 100), tx, ty, align, "[%d]", porta.destino_sala);
             }

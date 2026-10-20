@@ -13,6 +13,7 @@ typedef struct {
     ALLEGRO_BITMAP *sprite_porta_exit_aberta;
     ALLEGRO_BITMAP *sprite_chao;
     ALLEGRO_BITMAP *sprite_escada;
+    ALLEGRO_BITMAP *sprite_escada_vertical;
     ALLEGRO_BITMAP *sprite_prop1;
     ALLEGRO_BITMAP *sprite_water;
 } GameSprites;

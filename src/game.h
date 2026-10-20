@@ -6,7 +6,7 @@
 
 #define TOTAL_PLATAFORMAS 35
 #define TOTAL_PORTAS 62
-#define TOTAL_ESCADAS 2
+#define TOTAL_ESCADAS 8
 
 typedef struct {
     ALLEGRO_DISPLAY *tela;
