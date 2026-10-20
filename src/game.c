@@ -59,17 +59,135 @@ bool game_init(Game *game) {
         { 192, 190, 288, 8, 1, true },
         { 0, 126, 160, 8, 1, true },
         { 160, 158, 32, 8, 1, true },
-        { 0, 254, LARGURA_MAPA, 16, 2, false }
+        { 0, 254, LARGURA_MAPA, 16, 2, false },
+        { 0, 254, LARGURA_MAPA, 16, 3, false },
+        { 0, 254, LARGURA_MAPA, 16, 4, false },
+        { 0, 254, LARGURA_MAPA, 16, 5, false },
+        { 0, 254, LARGURA_MAPA, 16, 6, false },
+        { 0, 254, LARGURA_MAPA, 16, 7, false },
+        { 0, 254, LARGURA_MAPA, 16, 8, false },
+        { 0, 254, LARGURA_MAPA, 16, 9, false },
+        { 0, 254, LARGURA_MAPA, 16, 10, false },
+        { 0, 254, LARGURA_MAPA, 16, 11, false },
+        { 0, 254, LARGURA_MAPA, 16, 12, false },
+        { 0, 254, LARGURA_MAPA, 16, 13, false },
+        { 0, 254, LARGURA_MAPA, 16, 14, false },
+        { 0, 254, LARGURA_MAPA, 16, 15, false },
+        { 0, 254, LARGURA_MAPA, 16, 16, false },
+        { 0, 254, LARGURA_MAPA, 16, 17, false },
+        { 0, 254, LARGURA_MAPA, 16, 18, false },
+        { 0, 254, LARGURA_MAPA, 16, 19, false },
+        { 0, 254, LARGURA_MAPA, 16, 20, false },
+        { 0, 254, LARGURA_MAPA, 16, 21, false },
+        { 0, 254, LARGURA_MAPA, 16, 22, false },
+        { 0, 254, LARGURA_MAPA, 16, 23, false },
+        { 0, 254, LARGURA_MAPA, 16, 24, false },
+        { 0, 254, LARGURA_MAPA, 16, 25, false }
     };
     for (int i = 0; i < TOTAL_PLATAFORMAS; i++) game->mundo_plataformas[i] = temp_plat[i];
 
     Porta temp_porta[TOTAL_PORTAS] = {
+        // Sala 0: Limpeza
         { 171, 31, 64, 96, 0, 1, false, 0, 0 },
+
+        // Sala 1: Armazem geral
         { 0, 158, 64, 96, 1, 0, false, 0, 0 },
         { 416, 94, 64, 96, 1, 2, false, 0, 0 },
+
+        // Sala 2: Hall 5 (Andar 5)
         { 0, 158, 64, 96, 2, 1, false, 0, 0 },
-        { 416, 158, 64, 96, 2, 3, false, 0, 0 },
-        { 320, 158, 64, 96, 2, 1, false, 0, 1 }
+        { 96, 158, 64, 96, 2, 5, false, 0, 1 },
+        { 320, 158, 64, 96, 2, 3, false, 0, 1 },
+        { 416, 158, 64, 96, 2, 4, false, 0, 0 },
+
+        // Sala 3: Hall 4 (Andar 4)
+        { 0, 158, 64, 96, 3, 7, false, 0, 0 },
+        { 96, 158, 64, 96, 3, 2, false, 0, 1 },
+        { 320, 158, 64, 96, 3, 6, false, 0, 1 },
+        { 416, 158, 64, 96, 3, 8, false, 0, 0 },
+
+        // Sala 4: Deposito quimico (Andar 5)
+        { 0, 158, 64, 96, 4, 2, false, 0, 0 },
+        { 416, 158, 64, 96, 4, 9, false, 0, 0 },
+
+        // Sala 5: Hall 6 (Andar 6)
+        { 0, 158, 64, 96, 5, 10, false, 0, 0 },
+        { 320, 158, 64, 96, 5, 2, false, 0, 1 },
+        { 416, 158, 64, 96, 5, 11, false, 0, 0 },
+
+        // Sala 6: Hall 3 (Andar 3)
+        { 0, 158, 64, 96, 6, 13, false, 0, 0 },
+        { 96, 158, 64, 96, 6, 3, false, 0, 1 },
+        { 320, 158, 64, 96, 6, 12, false, 0, 1 },
+        { 416, 158, 64, 96, 6, 14, false, 0, 0 },
+
+        // Sala 7: Lab solidos (Andar 4)
+        { 416, 158, 64, 96, 7, 3, false, 0, 0 },
+
+        // Sala 8: Contencao solidos (Andar 4)
+        { 0, 158, 64, 96, 8, 3, false, 0, 0 },
+
+        // Sala 9: Entrada/saida carga (Andar 5)
+        { 0, 158, 64, 96, 9, 4, false, 0, 0 },
+
+        // Sala 10: Estufa/reciclagem (Andar 6)
+        { 416, 158, 64, 96, 10, 5, false, 0, 0 },
+
+        // Sala 11: Eletrica (Andar 6)
+        { 0, 158, 64, 96, 11, 5, false, 0, 0 },
+
+        // Sala 12: Hall 2 (Andar 2)
+        { 0, 158, 64, 96, 12, 16, false, 0, 0 },
+        { 96, 158, 64, 96, 12, 6, false, 0, 1 },
+        { 320, 158, 64, 96, 12, 15, false, 0, 1 },
+        { 416, 158, 64, 96, 12, 17, false, 0, 0 },
+
+        // Sala 13: Lab liquidos (Andar 3)
+        { 416, 158, 64, 96, 13, 6, false, 0, 0 },
+
+        // Sala 14: Contencao liquidos (Andar 3)
+        { 0, 158, 64, 96, 14, 6, false, 0, 0 },
+
+        // Sala 15: Hall 1 (Andar 1)
+        { 0, 158, 64, 96, 15, 19, false, 0, 0 },
+        { 96, 158, 64, 96, 15, 12, false, 0, 1 },
+        { 208, 158, 64, 96, 15, 20, false, 0, 0 },
+        { 320, 158, 64, 96, 15, 18, false, 0, 1 },
+        { 416, 158, 64, 96, 15, 21, false, 0, 0 },
+
+        // Sala 16: Lab gasosos (Andar 2)
+        { 416, 158, 64, 96, 16, 12, false, 0, 0 },
+
+        // Sala 17: Contencao gasosos (Andar 2)
+        { 0, 158, 64, 96, 17, 12, false, 0, 0 },
+
+        // Sala 18: Evacuacao (Andar 1)
+        { 96, 158, 64, 96, 18, 15, false, 0, 1 },
+
+        // Sala 19: Area comum (Andar 1)
+        { 0, 158, 64, 96, 19, 22, false, 0, 0 },
+        { 208, 158, 64, 96, 19, 23, false, 0, 0 },
+        { 416, 158, 64, 96, 19, 15, false, 0, 0 },
+
+        // Sala 20: Dormitorios (Andar 1)
+        { 0, 158, 64, 96, 20, 15, false, 0, 0 },
+        { 416, 158, 64, 96, 20, 24, false, 0, 0 },
+
+        // Sala 21: Ala medica (Andar 1)
+        { 0, 158, 64, 96, 21, 15, false, 0, 0 },
+        { 416, 158, 64, 96, 21, 25, false, 0, 0 },
+
+        // Sala 22: Central (Andar 1)
+        { 416, 158, 64, 96, 22, 19, false, 0, 0 },
+
+        // Sala 23: Refeitorio (Andar 1)
+        { 208, 158, 64, 96, 23, 19, false, 0, 0 },
+
+        // Sala 24: Banheiros (Andar 1)
+        { 0, 158, 64, 96, 24, 20, false, 0, 0 },
+
+        // Sala 25: Quarentena (Andar 1)
+        { 0, 158, 64, 96, 25, 21, false, 0, 0 }
     };
     for (int i = 0; i < TOTAL_PORTAS; i++) game->mundo_portas[i] = temp_porta[i];
 

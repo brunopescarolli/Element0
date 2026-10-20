@@ -4,8 +4,8 @@
 #include "defs.h"
 #include "render.h"
 
-#define TOTAL_PLATAFORMAS 7
-#define TOTAL_PORTAS 6
+#define TOTAL_PLATAFORMAS 29
+#define TOTAL_PORTAS 50
 #define TOTAL_ESCADAS 2
 
 typedef struct {

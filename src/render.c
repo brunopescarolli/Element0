@@ -7,6 +7,9 @@ void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item 
                     bool mostrar_hitbox, ALLEGRO_FONT *fonte, float largura_camera, float altura_camera) {
 
     ALLEGRO_BITMAP *bg_ativo = sprites->backgrounds[sala_atual];
+    if (!bg_ativo && (sala_atual == 3 || sala_atual == 5 || sala_atual == 6 || sala_atual == 12 || sala_atual == 15)) {
+        bg_ativo = sprites->backgrounds[2];
+    }
     if (bg_ativo) {
         float sw = al_get_bitmap_width(bg_ativo); float sh = al_get_bitmap_height(bg_ativo);
         al_draw_scaled_bitmap(bg_ativo, 0, 0, sw, sh, 0, 0, largura_camera, altura_camera, 0);
@@ -168,6 +171,7 @@ void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item 
         float body_top = (faxineiro->y + faxineiro->h / 2) - faxineiro->body_h;
         al_draw_rectangle(faxineiro->x - faxineiro->body_w / 2, body_top, faxineiro->x + faxineiro->body_w / 2, faxineiro->y + faxineiro->h / 2, al_map_rgb(0, 255, 255), 1.0);
 
+        al_draw_textf(fonte, al_map_rgb(0, 255, 0), 10, 10, ALLEGRO_ALIGN_LEFT, "Sala: %d", sala_atual);
         al_draw_text(fonte, al_map_rgb(255, 255, 0), largura_camera / 2.0, 10, ALLEGRO_ALIGN_CENTRE, "DEBUG MODE");
         al_draw_textf(fonte, al_map_rgb(0, 255, 255), largura_camera - 10, 10, ALLEGRO_ALIGN_RIGHT, "Ambiente: %.1f C", TEMP_ESTACAO);
         al_draw_textf(fonte, al_map_rgb(255, 150, 150), faxineiro->x, faxineiro->y - faxineiro->h / 2 - 15, ALLEGRO_ALIGN_CENTRE, "%.1f C", TEMP_JOGADOR);
