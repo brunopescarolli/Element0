@@ -1,4 +1,9 @@
 *.o
 src/*.o
 jogo
-jogo.exe
+*.exe
+*.lnk
+save.dat
+bin/
+extras/
+dist/
