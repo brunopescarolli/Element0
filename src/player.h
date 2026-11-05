@@ -7,6 +7,7 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *a
                        Soprador *soprador, Coletavel *refil_agua, Coletavel *bateria, Coletavel *kit_medico,
                        Inimigo *anomalia, Plataforma *plataformas, int total_plat, Escada *escadas, int total_escadas,
                        Porta *portas, int total_portas, Projetil *projeteis, int max_proj,
+                       Particula *particulas, int max_particulas,
                        TextoFlutuante *textos, int max_textos,
                        int *sala_atual, int *estado_fade, int *proxima_sala, float *proximo_x, float *proximo_chao_y);
 

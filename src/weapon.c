@@ -1,4 +1,5 @@
 #include "weapon.h"
+#include "enemy.h"
 
 void instanciar_texto_flutuante(TextoFlutuante *textos, int max_textos, float x, float y, const char *mensagem, ALLEGRO_COLOR cor) {
     if (mensagem[0] != '-' && mensagem[0] != '+') {
@@ -115,15 +116,68 @@ void atualizar_soprador(Jogador *faxineiro, Soprador *soprador, bool atirando, T
     }
 }
 
-void atualizar_projeteis(Projetil *projeteis, int max_proj, int sala_atual) {
-    float limite_mapa_x = (sala_atual == 0) ? (LARGURA_MAPA / 2.0) : LARGURA_MAPA;
+void atualizar_projeteis(Projetil *projeteis, int max_proj, int sala_atual,
+                         Plataforma *plataformas, int total_plat, Escada *escadas, int total_escadas,
+                         Particula *particulas, int max_particulas) {
+    float limite_mapa_x = (sala_atual == 0) ? (LARGURA_MAPA / 2.0f) : LARGURA_MAPA;
 
     for (int i = 0; i < max_proj; i++) {
-        if (projeteis[i].ativo) {
-            projeteis[i].x += projeteis[i].vel_x;
-            if (projeteis[i].x < 0 || projeteis[i].x > limite_mapa_x) {
-                projeteis[i].ativo = false;
+        if (!projeteis[i].ativo) continue;
+
+        projeteis[i].x += projeteis[i].vel_x;
+        bool colidiu = false;
+        float impacto_x = projeteis[i].x;
+        float impacto_y = projeteis[i].y;
+
+        // Colisão com as paredes laterais da sala
+        if (projeteis[i].x - 3.0f <= 0.0f) {
+            impacto_x = 1.0f;
+            colidiu = true;
+        } else if (projeteis[i].x + 3.0f >= limite_mapa_x) {
+            impacto_x = limite_mapa_x - 1.0f;
+            colidiu = true;
+        }
+
+        // Colisão com plataformas / chão / obstáculos
+        if (!colidiu && plataformas != NULL) {
+            for (int p = 0; p < total_plat; p++) {
+                if (plataformas[p].sala != sala_atual) continue;
+                Plataforma plat = plataformas[p];
+                if (projeteis[i].x + 3.0f > plat.x && projeteis[i].x - 3.0f < plat.x + plat.w &&
+                    projeteis[i].y + 1.0f > plat.y && projeteis[i].y - 1.0f < plat.y + plat.h) {
+                    impacto_x = (projeteis[i].vel_x > 0.0f) ? plat.x : (plat.x + plat.w);
+                    colidiu = true;
+                    break;
+                }
             }
+        }
+
+        // Colisão com rampas / escadas inclinadas
+        if (!colidiu && escadas != NULL) {
+            for (int e = 0; e < total_escadas; e++) {
+                if (escadas[e].sala != sala_atual || escadas[e].direcao == 0) continue;
+                Escada esc = escadas[e];
+                if (projeteis[i].x + 3.0f > esc.x && projeteis[i].x - 3.0f < esc.x + esc.w &&
+                    projeteis[i].y + 1.0f > esc.y && projeteis[i].y - 1.0f < esc.y + esc.h) {
+                    float progresso = (projeteis[i].x - esc.x) / esc.w;
+                    if (progresso < 0.0f) progresso = 0.0f;
+                    if (progresso > 1.0f) progresso = 1.0f;
+                    float rampa_y = (esc.direcao == 1)
+                        ? (esc.y + esc.h - (progresso * esc.h))
+                        : (esc.y + (progresso * esc.h));
+                    if (projeteis[i].y >= rampa_y) {
+                        colidiu = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (colidiu) {
+            if (projeteis[i].tipo == PROJETIL_AGUA) {
+                instanciar_splash_agua(particulas, max_particulas, impacto_x, impacto_y, projeteis[i].vel_x);
+            }
+            projeteis[i].ativo = false;
         }
     }
 }

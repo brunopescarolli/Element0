@@ -51,6 +51,7 @@ typedef struct {
     Coletavel kit_medico;
     Inimigo anomalia;
     Projetil projeteis[MAX_PROJETEIS];
+    Particula particulas[MAX_PARTICULAS];
 
     Plataforma mundo_plataformas[TOTAL_PLATAFORMAS];
     Porta mundo_portas[TOTAL_PORTAS];

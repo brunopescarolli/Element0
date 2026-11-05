@@ -20,6 +20,7 @@
 #define ESPESSURA_PAREDE 10.0
 
 #define MAX_PROJETEIS 10
+#define MAX_PARTICULAS 500
 #define VELOCIDADE_PROJETIL 6.0
 #define COOLDOWN_TIRO 60
 
@@ -61,6 +62,17 @@ enum TipoFrame { FRAME_IDLE = 0, FRAME_BRE = 1, FRAME_WALK1 = 2, FRAME_WALK2 = 3
 
 enum TipoProjetil { PROJETIL_AGUA, PROJETIL_FOGO, PROJETIL_NORMAL };
 enum TipoArma { ARMA_NENHUMA = -1, ARMA_MOP = 0, ARMA_SOPRADOR = 1 };
+enum TipoParticula { PARTICULA_GOTA = 0, PARTICULA_VAPOR = 1 };
+
+typedef struct {
+    float x, y;
+    float vx, vy;
+    float vida;
+    float vida_maxima;
+    int tipo;
+    ALLEGRO_COLOR cor;
+    float tamanho;
+} Particula;
 
 typedef struct {
     float eixo_x;
@@ -223,6 +235,7 @@ typedef struct {
     int numero_atomico;
 
     float temperatura;
+    float agua_atual;
     bool recebendo_calor;
     bool recebendo_calor_jogador;
     bool recebendo_calor_soprador;

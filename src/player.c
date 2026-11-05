@@ -7,6 +7,7 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *a
                        Soprador *soprador, Coletavel *refil_agua, Coletavel *bateria, Coletavel *kit_medico,
                        Inimigo *anomalia, Plataforma *plataformas, int total_plat, Escada *escadas, int total_escadas,
                        Porta *portas, int total_portas, Projetil *projeteis, int max_proj,
+                       Particula *particulas, int max_particulas,
                        TextoFlutuante *textos, int max_textos,
                        int *sala_atual, int *estado_fade, int *proxima_sala, float *proximo_x, float *proximo_chao_y) {
 
@@ -35,7 +36,9 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *a
             faxineiro->vel_y = 0;
             faxineiro->no_chao = true;
         }
-        atualizar_projeteis(projeteis, max_proj, *sala_atual);
+        atualizar_projeteis(projeteis, max_proj, *sala_atual,
+                            plataformas, total_plat, escadas, total_escadas,
+                            particulas, max_particulas);
         return;
     }
 
@@ -430,7 +433,9 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *a
         disparar_arma_jogador(faxineiro, projeteis, max_proj, textos, max_textos);
     }
     atualizar_soprador(faxineiro, soprador, input->atirando, textos, max_textos);
-    atualizar_projeteis(projeteis, max_proj, *sala_atual);
+    atualizar_projeteis(projeteis, max_proj, *sala_atual,
+                        plataformas, total_plat, escadas, total_escadas,
+                        particulas, max_particulas);
 
     // Hitbox de chamas do Soprador Térmico aquece a anomalia
     if (soprador->ativo && *sala_atual == anomalia->sala_origem) {

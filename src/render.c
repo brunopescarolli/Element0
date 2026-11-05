@@ -195,9 +195,41 @@ void desenhar_sprite_quente(ALLEGRO_BITMAP *sprite, float centro_x, float centro
     }
 }
 
+void desenhar_particulas(Particula *particulas, int max_particulas) {
+    if (!particulas) return;
+
+    for (int i = 0; i < max_particulas; i++) {
+        if (particulas[i].vida <= 0.0f || particulas[i].vida_maxima <= 0.0f) continue;
+
+        float ratio_vida = particulas[i].vida / particulas[i].vida_maxima;
+        if (ratio_vida < 0.0f) ratio_vida = 0.0f;
+        if (ratio_vida > 1.0f) ratio_vida = 1.0f;
+
+        unsigned char r, g, b;
+        al_unmap_rgb(particulas[i].cor, &r, &g, &b);
+
+        if (particulas[i].tipo == PARTICULA_GOTA) {
+            unsigned char alpha_gota = clamp_canal_rgb(ratio_vida * 230.0f);
+            ALLEGRO_COLOR cor_gota = al_map_rgba(r, g, b, alpha_gota);
+            float metade = particulas[i].tamanho * 0.5f;
+            if (metade < 0.5f) metade = 0.5f;
+            al_draw_filled_rectangle(particulas[i].x - metade, particulas[i].y - metade,
+                                     particulas[i].x + metade, particulas[i].y + metade, cor_gota);
+        } else if (particulas[i].tipo == PARTICULA_VAPOR) {
+            unsigned char alpha_vapor = clamp_canal_rgb(ratio_vida * 150.0f);
+            ALLEGRO_COLOR cor_vapor = al_map_rgba(r, g, b, alpha_vapor);
+            float metade = particulas[i].tamanho * 0.5f;
+            if (metade < 0.6f) metade = 0.6f;
+            al_draw_filled_rectangle(particulas[i].x - metade, particulas[i].y - metade,
+                                     particulas[i].x + metade, particulas[i].y + metade, cor_vapor);
+        }
+    }
+}
+
 void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item *arma_mop, Item *arma_soprador,
                     Soprador *soprador, Coletavel *refil_agua, Coletavel *bateria, Coletavel *kit_medico,
-                    Projetil *projeteis, int max_proj, Plataforma *plataformas, int total_plat,
+                    Projetil *projeteis, int max_proj, Particula *particulas, int max_particulas,
+                    Plataforma *plataformas, int total_plat,
                     Escada *escadas, int total_escadas, Porta *portas, int total_portas,
                     Elevador *elevadores, int total_elevadores, TextoFlutuante *textos, int max_textos,
                     GameSprites *sprites, bool prop_na_frente, int estado_fade, int alpha_fade,
@@ -369,6 +401,8 @@ void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item 
                                flag_galio_flip, anomalia->temperatura, anomalia->frame_atual);
     }
 
+    desenhar_particulas(particulas, max_particulas);
+
     if (arma_mop && arma_mop->no_chao && arma_mop->sala_origem == sala_atual && arma_mop->sprite) {
         float larg_mop = al_get_bitmap_width(arma_mop->sprite); float alt_mop = al_get_bitmap_height(arma_mop->sprite);
         al_draw_bitmap(arma_mop->sprite, arma_mop->x - (larg_mop / 2), arma_mop->y - alt_mop, 0);
@@ -402,10 +436,13 @@ void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item 
 
     for (int i = 0; i < max_proj; i++) {
         if (projeteis[i].ativo) {
-            if (projeteis[i].tipo == PROJETIL_AGUA && sprites->sprite_water) {
-                float larg_w = al_get_bitmap_width(sprites->sprite_water); float alt_w = al_get_bitmap_height(sprites->sprite_water);
-                float angulo_water = (projeteis[i].vel_x > 0) ? (ALLEGRO_PI / 2.0) : (-ALLEGRO_PI / 2.0);
-                al_draw_rotated_bitmap(sprites->sprite_water, larg_w / 2.0, alt_w / 2.0, projeteis[i].x, projeteis[i].y, angulo_water, 0);
+            if (projeteis[i].tipo == PROJETIL_AGUA) {
+                // Jato de água procedural: retângulo de 6x2 pixels azul claro translúcido
+                al_draw_filled_rectangle(
+                    projeteis[i].x - 3.0f, projeteis[i].y - 1.0f,
+                    projeteis[i].x + 3.0f, projeteis[i].y + 1.0f,
+                    al_map_rgba(0, 150, 255, 200)
+                );
             } else {
                 al_draw_filled_circle(projeteis[i].x, projeteis[i].y, 2, al_map_rgb(100, 200, 255));
             }

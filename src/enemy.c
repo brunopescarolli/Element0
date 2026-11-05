@@ -2,9 +2,75 @@
 #include "physics.h"
 #include "elementos.h"
 
+void instanciar_particula(Particula *particulas, int max_particulas,
+                          float x, float y, float vx, float vy,
+                          float vida_maxima, int tipo, ALLEGRO_COLOR cor, float tamanho) {
+    if (!particulas || max_particulas <= 0) return;
+
+    int slot = -1;
+    for (int i = 0; i < max_particulas; i++) {
+        if (particulas[i].vida <= 0.0f) {
+            slot = i;
+            break;
+        }
+    }
+    if (slot == -1) {
+        return;
+    }
+
+    particulas[slot].x = x;
+    particulas[slot].y = y;
+    particulas[slot].vx = vx;
+    particulas[slot].vy = vy;
+    particulas[slot].vida = vida_maxima;
+    particulas[slot].vida_maxima = (vida_maxima > 0.0f) ? vida_maxima : 1.0f;
+    particulas[slot].tipo = tipo;
+    particulas[slot].cor = cor;
+    particulas[slot].tamanho = tamanho;
+}
+
+void instanciar_splash_agua(Particula *particulas, int max_particulas, float x, float y, float vel_x_tiro) {
+    if (!particulas || max_particulas <= 0) return;
+
+    int qtd_splash = 5 + (rand() % 4); // 5 a 8 partículas
+    float dir_rebote = (vel_x_tiro >= 0.0f) ? -1.0f : 1.0f;
+
+    for (int i = 0; i < qtd_splash; i++) {
+        float vx = dir_rebote * (0.5f + ((float)(rand() % 100) / 100.0f) * 1.6f);
+        float vy = (((float)(rand() % 200) / 100.0f) - 1.15f) * 1.3f;
+        float vida = 12.0f + (float)(rand() % 10);
+        float tamanho = 1.5f + ((float)(rand() % 10) / 10.0f) * 1.0f;
+        ALLEGRO_COLOR cor_splash = al_map_rgb(0, 150, 255);
+        instanciar_particula(particulas, max_particulas, x, y, vx, vy, vida, PARTICULA_GOTA, cor_splash, tamanho);
+    }
+}
+
+void atualizar_particulas(Particula *particulas, int max_particulas) {
+    if (!particulas) return;
+
+    for (int i = 0; i < max_particulas; i++) {
+        if (particulas[i].vida <= 0.0f) continue;
+
+        particulas[i].x += particulas[i].vx;
+        particulas[i].y += particulas[i].vy;
+
+        if (particulas[i].tipo == PARTICULA_GOTA) {
+            particulas[i].vy += 0.07f;
+        } else if (particulas[i].tipo == PARTICULA_VAPOR) {
+            particulas[i].tamanho += 0.06f;
+        }
+
+        particulas[i].vida -= 1.0f;
+        if (particulas[i].vida < 0.0f) {
+            particulas[i].vida = 0.0f;
+        }
+    }
+}
+
 void atualizar_inimigo(Inimigo *anomalia, Jogador *faxineiro,
                         Plataforma *plataformas, int total_plat, Escada *escadas, int total_escadas,
-                        int sala_atual, int estado_fade, Projetil *projeteis, int max_proj) {
+                        int sala_atual, int estado_fade, Projetil *projeteis, int max_proj,
+                        Particula *particulas, int max_particulas) {
 
     float limite_anomalia = (anomalia->sala_origem == 0) ? (LARGURA_MAPA / 2.0) : LARGURA_MAPA;
 
@@ -147,11 +213,15 @@ void atualizar_inimigo(Inimigo *anomalia, Jogador *faxineiro,
                 bool acertou_monstro_y = (projeteis[i].y > anomalia->y - anomalia->h / 2) && (projeteis[i].y < anomalia->y + anomalia->h / 2);
 
                 if (acertou_monstro_x && acertou_monstro_y) {
-                    projeteis[i].ativo = false;
-
                     if (projeteis[i].tipo == PROJETIL_AGUA) {
+                        instanciar_splash_agua(particulas, max_particulas, projeteis[i].x, projeteis[i].y, projeteis[i].vel_x);
                         anomalia->timer_resfriamento = 300;
+                        anomalia->agua_atual += 25.0f;
+                        if (anomalia->agua_atual > 100.0f) {
+                            anomalia->agua_atual = 100.0f;
+                        }
                     }
+                    projeteis[i].ativo = false;
 
                     anomalia->raio_visao = 180.0 * 5.0;
                     anomalia->timer_agro = 300;
@@ -161,7 +231,7 @@ void atualizar_inimigo(Inimigo *anomalia, Jogador *faxineiro,
         }
     }
 
-    // Termodinâmica e mudança de estado físico
+    // Termodinâmica, choque térmico e evaporação
     DadosElemento dados_anomalia = tabela_periodica[anomalia->numero_atomico];
 
     if (anomalia->timer_resfriamento > 0) {
@@ -173,28 +243,69 @@ void atualizar_inimigo(Inimigo *anomalia, Jogador *faxineiro,
         if (anomalia->temperatura > 1500.0f) {
             anomalia->temperatura = 1500.0f;
         }
-    } else if (anomalia->recebendo_calor_jogador) {
-        if (anomalia->temperatura < TEMP_JOGADOR) {
-            anomalia->temperatura += (4.0f / (float)FPS);
-            if (anomalia->temperatura > TEMP_JOGADOR) {
-                anomalia->temperatura = TEMP_JOGADOR;
-            }
-        } else if (anomalia->temperatura > TEMP_JOGADOR) {
-            float reducao_por_segundo = 2.0f * (anomalia->temperatura / 100.0f);
-            if (anomalia->timer_resfriamento > 0) {
-                reducao_por_segundo *= 2.0f;
-            }
-            anomalia->temperatura -= reducao_por_segundo / 60.0f;
-            if (anomalia->temperatura < TEMP_JOGADOR) {
-                anomalia->temperatura = TEMP_JOGADOR;
-            }
+    } else if (anomalia->recebendo_calor_jogador && anomalia->temperatura < TEMP_JOGADOR) {
+        anomalia->temperatura += (4.0f / (float)FPS);
+        if (anomalia->temperatura > TEMP_JOGADOR) {
+            anomalia->temperatura = TEMP_JOGADOR;
         }
     } else {
-        float reducao_por_segundo = 2.0f * (anomalia->temperatura / 100.0f);
-        if (anomalia->timer_resfriamento > 0) {
-            reducao_por_segundo *= 2.0f;
+        float multiplicador_agua = (anomalia->agua_atual > 0.0f) ? 4.0f : 1.0f;
+        float reducao_temperatura = multiplicador_agua * (2.0f * anomalia->temperatura / 100.0f);
+        anomalia->temperatura -= (reducao_temperatura / 60.0f);
+
+        if (anomalia->recebendo_calor_jogador && anomalia->temperatura < TEMP_JOGADOR) {
+            anomalia->temperatura = TEMP_JOGADOR;
         }
-        anomalia->temperatura -= reducao_por_segundo / 60.0f;
+    }
+
+    if (anomalia->agua_atual > 0.0f) {
+        float evaporacao_por_segundo = (anomalia->temperatura / 10.0f);
+
+        if (sala_atual == anomalia->sala_origem && particulas != NULL) {
+            // 3. Feedback Visual do Estado "Molhado" (Gotas Azuis: 1 ou 2 por frame)
+            int qtd_gotas = 1 + (rand() % 2);
+            for (int g = 0; g < qtd_gotas; g++) {
+                float rx = ((float)(rand() % 1000) / 1000.0f) - 0.5f;
+                float ry = ((float)(rand() % 1000) / 1000.0f) - 0.5f;
+                float px = anomalia->x + rx * (anomalia->w * 0.85f);
+                float py = anomalia->y + ry * (anomalia->h * 0.85f);
+                float vx = (((float)(rand() % 100) / 100.0f) - 0.5f) * 0.12f;
+                float vy = 0.45f + ((float)(rand() % 100) / 100.0f) * 0.45f;
+                float vida_gota = 14.0f + (float)(rand() % 10);
+                float tam_gota = 1.2f + ((float)(rand() % 10) / 10.0f) * 0.8f;
+                ALLEGRO_COLOR cor_gota = al_map_rgb(60, 175, 255);
+                instanciar_particula(particulas, max_particulas, px, py, vx, vy, vida_gota, PARTICULA_GOTA, cor_gota, tam_gota);
+            }
+
+            // 4. Feedback Visual de Evaporação (Vapor Branco/Cinza apenas quando temperatura > 100.0 °C)
+            if (anomalia->temperatura > 100.0f) {
+                float taxa_vapor = evaporacao_por_segundo * 0.06f;
+                int qtd_vapor = (int)taxa_vapor;
+                float chance_extra = taxa_vapor - (float)qtd_vapor;
+                if (((float)(rand() % 1000) / 1000.0f) < chance_extra) {
+                    qtd_vapor++;
+                }
+
+                for (int v = 0; v < qtd_vapor; v++) {
+                    float rx = ((float)(rand() % 1000) / 1000.0f) - 0.5f;
+                    float ry = ((float)(rand() % 1000) / 1000.0f) - 0.5f;
+                    float px = anomalia->x + rx * (anomalia->w * 0.90f);
+                    float py = anomalia->y + ry * (anomalia->h * 0.70f);
+                    float vx = (((float)(rand() % 100) / 100.0f) - 0.5f) * 0.55f;
+                    float vy = -(0.50f + ((float)(rand() % 100) / 100.0f) * 0.85f);
+                    float vida_vapor = 28.0f + (float)(rand() % 24);
+                    float tam_vapor = 2.0f + ((float)(rand() % 15) / 10.0f);
+                    unsigned char tom = (unsigned char)(210 + (rand() % 46));
+                    ALLEGRO_COLOR cor_vapor = al_map_rgb(tom, tom, tom);
+                    instanciar_particula(particulas, max_particulas, px, py, vx, vy, vida_vapor, PARTICULA_VAPOR, cor_vapor, tam_vapor);
+                }
+            }
+        }
+
+        anomalia->agua_atual -= (evaporacao_por_segundo / 60.0f);
+        if (anomalia->agua_atual <= 0.0f) {
+            anomalia->agua_atual = 0.0f;
+        }
     }
 
     if (anomalia->temperatura < 20.0f) anomalia->temperatura = 20.0f;

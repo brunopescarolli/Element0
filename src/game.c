@@ -67,6 +67,7 @@ static void reiniciar_campanha(Game *game) {
     game->anomalia.sala_origem = 1;
     game->anomalia.alvo_x = 0.0f;
     game->anomalia.temperatura = TEMP_ESTACAO;
+    game->anomalia.agua_atual = 0.0f;
     game->anomalia.recebendo_calor = false;
     game->anomalia.recebendo_calor_jogador = false;
     game->anomalia.recebendo_calor_soprador = false;
@@ -80,6 +81,7 @@ static void reiniciar_campanha(Game *game) {
     game->anomalia.timer_patrulha = 0;
 
     for (int i = 0; i < MAX_PROJETEIS; i++) game->projeteis[i].ativo = false;
+    for (int p = 0; p < MAX_PARTICULAS; p++) game->particulas[p].vida = 0.0f;
     for (int t = 0; t < MAX_TEXTOS_FLUTUANTES; t++) game->textos_flutuantes[t].ativo = false;
 
     salvar_jogo(game->nome_jogador, game->sala_atual, &game->faxineiro,
@@ -373,7 +375,6 @@ bool game_init(Game *game) {
 
     game->arma_mop = (Item){ 62.0, 127.0, 0.0, 30.0, true, 0, NULL };
     game->arma_mop.sprite = al_load_bitmap("assets/sprites/mop.png");
-    game->sprites.sprite_water = al_load_bitmap("assets/sprites/water.png");
 
     game->arma_soprador = (Item){ 80.0f, 127.0f, 0.0f, 30.0f, true, 0, NULL };
     game->soprador = (Soprador){ 0.0f, 0.0f, 34.0f, 16.0f, false };
@@ -387,7 +388,7 @@ bool game_init(Game *game) {
         1, 0.0,
         180.0,
         31,
-        TEMP_ESTACAO, false, false, false, SOLIDO, al_map_rgb(210, 210, 220),
+        TEMP_ESTACAO, 0.0f, false, false, false, SOLIDO, al_map_rgb(210, 210, 220),
         {NULL, NULL, NULL, NULL, NULL},
         {NULL, NULL, NULL, NULL, NULL},
         0, 0, 0,
@@ -405,6 +406,7 @@ bool game_init(Game *game) {
     }
 
     for (int i = 0; i < MAX_PROJETEIS; i++) game->projeteis[i].ativo = false;
+    for (int p = 0; p < MAX_PARTICULAS; p++) game->particulas[p].vida = 0.0f;
 
     game->timer = al_create_timer(1.0 / FPS);
     game->fila_eventos = al_create_event_queue();
@@ -917,6 +919,7 @@ void game_run(Game *game) {
                         game->faxineiro.no_chao = true;
                         game->faxineiro.escalando = false;
                         for (int t = 0; t < MAX_TEXTOS_FLUTUANTES; t++) game->textos_flutuantes[t].ativo = false;
+                        for (int p = 0; p < MAX_PARTICULAS; p++) game->particulas[p].vida = 0.0f;
                         if (!game->faxineiro.morreu) {
                             salvar_jogo(game->nome_jogador, game->sala_atual, &game->faxineiro,
                                         &game->arma_mop, &game->arma_soprador,
@@ -962,7 +965,8 @@ void game_run(Game *game) {
                                   &game->soprador, &game->refil_agua, &game->bateria, &game->kit_medico,
                                   &game->anomalia, game->mundo_plataformas, TOTAL_PLATAFORMAS,
                                   game->mundo_escadas, TOTAL_ESCADAS, game->mundo_portas, TOTAL_PORTAS,
-                                  game->projeteis, MAX_PROJETEIS, game->textos_flutuantes, MAX_TEXTOS_FLUTUANTES,
+                                  game->projeteis, MAX_PROJETEIS, game->particulas, MAX_PARTICULAS,
+                                  game->textos_flutuantes, MAX_TEXTOS_FLUTUANTES,
                                   &game->sala_atual, &game->estado_fade, &game->proxima_sala, &game->proximo_x, &game->proximo_chao_y);
 
                 if (game->estado_fade == 0 && game->input.acao_entrar && !game->faxineiro.escalando) {
@@ -1019,7 +1023,9 @@ void game_run(Game *game) {
 
                 atualizar_inimigo(&game->anomalia, &game->faxineiro,
                                   game->mundo_plataformas, TOTAL_PLATAFORMAS, game->mundo_escadas, TOTAL_ESCADAS,
-                                  game->sala_atual, game->estado_fade, game->projeteis, MAX_PROJETEIS);
+                                  game->sala_atual, game->estado_fade, game->projeteis, MAX_PROJETEIS,
+                                  game->particulas, MAX_PARTICULAS);
+                atualizar_particulas(game->particulas, MAX_PARTICULAS);
 
                 if (game->faxineiro.morreu) {
                     game->alpha_game_over += (255.0f / (1.75f * (float)FPS));
@@ -1050,7 +1056,8 @@ void game_run(Game *game) {
                 al_use_transform(&camera_jogo);
                 desenhar_mundo(game->sala_atual, &game->faxineiro, &game->anomalia, &game->arma_mop, &game->arma_soprador,
                                &game->soprador, &game->refil_agua, &game->bateria, &game->kit_medico,
-                               game->projeteis, MAX_PROJETEIS, game->mundo_plataformas, TOTAL_PLATAFORMAS,
+                               game->projeteis, MAX_PROJETEIS, game->particulas, MAX_PARTICULAS,
+                               game->mundo_plataformas, TOTAL_PLATAFORMAS,
                                game->mundo_escadas, TOTAL_ESCADAS, game->mundo_portas, TOTAL_PORTAS,
                                game->mundo_elevadores, TOTAL_ELEVADORES, game->textos_flutuantes, MAX_TEXTOS_FLUTUANTES,
                                &game->sprites, game->prop_na_frente, game->estado_fade, game->alpha_fade,
@@ -1095,7 +1102,6 @@ void game_cleanup(Game *game) {
     if (game->sprites.bg_escadaria) al_destroy_bitmap(game->sprites.bg_escadaria);
     if (game->arma_mop.sprite) al_destroy_bitmap(game->arma_mop.sprite);
     if (game->arma_soprador.sprite) al_destroy_bitmap(game->arma_soprador.sprite);
-    if (game->sprites.sprite_water) al_destroy_bitmap(game->sprites.sprite_water);
     if (game->fonte) al_destroy_font(game->fonte);
     if (game->timer) al_destroy_timer(game->timer);
     if (game->fila_eventos) al_destroy_event_queue(game->fila_eventos);
