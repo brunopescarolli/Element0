@@ -279,8 +279,8 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *a
             anomalia->recebendo_calor = true;
             anomalia->recebendo_calor_jogador = true;
 
-            // Dano térmico por "tick" (I-Frames de 60 frames / 1s) ao colidir com elemento quente
-            if (anomalia->temperatura >= 400.0f && faxineiro->timer_dano <= 0) {
+            // Dano térmico por "tick" (I-Frames de 60 frames / 1s) ao colidir com elemento quente (>= 525 °C / Ponto de Draper)
+            if (anomalia->temperatura >= PONTO_DRAPER && faxineiro->timer_dano <= 0) {
                 faxineiro->barra_vida -= 10.0f;
                 if (faxineiro->barra_vida < 0.0f) {
                     faxineiro->barra_vida = 0.0f;
@@ -494,6 +494,7 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *a
         if (faxineiro->barra_radio > 100.0f) faxineiro->barra_radio = 100.0f;
 
         faxineiro->morreu = true;
+        remove("save.dat");
         faxineiro->timer_dano = 0;
         faxineiro->escalando = false;
         faxineiro->esta_andando = false;

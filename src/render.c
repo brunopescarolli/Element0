@@ -45,53 +45,154 @@ static unsigned char clamp_canal_rgb(float valor) {
     return (unsigned char)(valor + 0.5f);
 }
 
-ALLEGRO_COLOR obter_cor_temperatura(float temp) {
-    float r = 255.0f;
-    float g = 255.0f;
-    float b = 255.0f;
+static float lerp_float(float a, float b, float ratio) {
+    if (ratio < 0.0f) ratio = 0.0f;
+    if (ratio > 1.0f) ratio = 1.0f;
+    return a + (b - a) * ratio;
+}
+
+void obter_cores_temperatura(float temp, ALLEGRO_COLOR *cor_borda, ALLEGRO_COLOR *cor_centro) {
+    float r_borda = 255.0f, g_borda = 255.0f, b_borda = 255.0f;
+    float r_centro = 255.0f, g_centro = 255.0f, b_centro = 255.0f;
 
     if (temp < 400.0f) {
-        r = 255.0f;
-        g = 255.0f;
-        b = 255.0f;
-    } else if (temp < 525.0f) {
-        // 400 °C a 525 °C: Branco (255, 255, 255) -> Vermelho Bem Escuro (100, 0, 0)
-        float t = (temp - 400.0f) / (525.0f - 400.0f);
-        r = 255.0f + t * (100.0f - 255.0f);
-        g = 255.0f + t * (0.0f - 255.0f);
-        b = 255.0f + t * (0.0f - 255.0f);
+        // < 400 °C: Branco (255, 255, 255)
+        r_borda = 255.0f; g_borda = 255.0f; b_borda = 255.0f;
+        r_centro = 255.0f; g_centro = 255.0f; b_centro = 255.0f;
     } else if (temp < 700.0f) {
-        // 525 °C a 700 °C: Vermelho Bem Escuro (100, 0, 0) -> Vermelho Vivo (255, 0, 0)
-        float t = (temp - 525.0f) / (700.0f - 525.0f);
-        r = 100.0f + t * (255.0f - 100.0f);
-        g = 0.0f;
-        b = 0.0f;
+        // 400 °C a 700 °C: Interpola de Branco (255, 255, 255) para Vermelho Vivo (255, 20, 20)
+        float ratio = (temp - 400.0f) / (700.0f - 400.0f);
+        r_borda = lerp_float(255.0f, 255.0f, ratio);
+        g_borda = lerp_float(255.0f, 20.0f, ratio);
+        b_borda = lerp_float(255.0f, 20.0f, ratio);
+        r_centro = r_borda; g_centro = g_borda; b_centro = b_borda;
     } else if (temp < 900.0f) {
-        // 700 °C a 900 °C: Vermelho Vivo (255, 0, 0) -> Laranja (255, 127, 0)
-        float t = (temp - 700.0f) / (900.0f - 700.0f);
-        r = 255.0f;
-        g = 0.0f + t * (127.0f - 0.0f);
-        b = 0.0f;
-    } else if (temp < 1100.0f) {
-        // 900 °C a 1100 °C: Laranja (255, 127, 0) -> Amarelo (255, 255, 0)
-        float t = (temp - 900.0f) / (1100.0f - 900.0f);
-        r = 255.0f;
-        g = 127.0f + t * (255.0f - 127.0f);
-        b = 0.0f;
-    } else if (temp < 1300.0f) {
-        // 1100 °C a 1300 °C: Amarelo (255, 255, 0) -> Branco Brilhante (255, 255, 255)
-        float t = (temp - 1100.0f) / (1300.0f - 1100.0f);
-        r = 255.0f;
-        g = 255.0f;
-        b = 0.0f + t * (255.0f - 0.0f);
+        // 700 °C a 900 °C: Interpola de Vermelho Vivo (255, 20, 20) para Laranja (255, 100, 0)
+        float ratio = (temp - 700.0f) / (900.0f - 700.0f);
+        r_borda = lerp_float(255.0f, 255.0f, ratio);
+        g_borda = lerp_float(20.0f, 100.0f, ratio);
+        b_borda = lerp_float(20.0f, 0.0f, ratio);
+        r_centro = r_borda; g_centro = g_borda; b_centro = b_borda;
+    } else if (temp <= 1100.0f) {
+        // 900 °C a 1100 °C: Interpola de Laranja (255, 100, 0) para Amarelo Ouro (255, 210, 0)
+        float ratio = (temp - 900.0f) / (1100.0f - 900.0f);
+        r_borda = lerp_float(255.0f, 255.0f, ratio);
+        g_borda = lerp_float(100.0f, 210.0f, ratio);
+        b_borda = lerp_float(0.0f, 0.0f, ratio);
+        r_centro = r_borda; g_centro = g_borda; b_centro = b_borda;
     } else {
-        // 1300 °C+: Estado de incandescência total (Branco Brilhante)
-        r = 255.0f;
-        g = 255.0f;
-        b = 255.0f;
+        // > 1100 °C: cor_borda = Amarelo Ouro (255, 210, 0), cor_centro = Branco (255, 255, 255)
+        r_borda = 255.0f; g_borda = 210.0f; b_borda = 0.0f;
+        r_centro = 255.0f; g_centro = 255.0f; b_centro = 255.0f;
     }
 
-    return al_map_rgb(clamp_canal_rgb(r), clamp_canal_rgb(g), clamp_canal_rgb(b));
+    if (cor_borda) {
+        *cor_borda = al_map_rgb(clamp_canal_rgb(r_borda), clamp_canal_rgb(g_borda), clamp_canal_rgb(b_borda));
+    }
+    if (cor_centro) {
+        *cor_centro = al_map_rgb(clamp_canal_rgb(r_centro), clamp_canal_rgb(g_centro), clamp_canal_rgb(b_centro));
+    }
+}
+
+ALLEGRO_COLOR obter_cor_temperatura(float temp) {
+    ALLEGRO_COLOR cor_borda;
+    obter_cores_temperatura(temp, &cor_borda, NULL);
+    return cor_borda;
+}
+
+void desenhar_sprite_quente(ALLEGRO_BITMAP *sprite, float centro_x, float centro_y, float larg_fallback, float alt_fallback, int flags, float temp, int frame_atual) {
+    ALLEGRO_COLOR cor_borda, cor_centro;
+    obter_cores_temperatura(temp, &cor_borda, &cor_centro);
+
+    float alpha_aura = 0.0f;
+    float alpha_centro = 0.0f;
+    if (temp < 400.0f) {
+        alpha_aura = 0.0f;
+        alpha_centro = 0.0f;
+    } else if (temp <= 525.0f) {
+        float razao = (temp - 400.0f) / 125.0f;
+        alpha_aura = lerp_float(0.0f, 0.15f, razao);
+        alpha_centro = lerp_float(0.0f, 0.4f, razao);
+    } else {
+        alpha_aura = 0.15f;
+        alpha_centro = 0.4f;
+    }
+
+    unsigned char br, bg, bb;
+    al_unmap_rgb(cor_borda, &br, &bg, &bb);
+    float r_borda_f = (float)br / 255.0f;
+    float g_borda_f = (float)bg / 255.0f;
+    float b_borda_f = (float)bb / 255.0f;
+
+    unsigned char cr, cg, cb;
+    al_unmap_rgb(cor_centro, &cr, &cg, &cb);
+    float r_centro_f = (float)cr / 255.0f;
+    float g_centro_f = (float)cg / 255.0f;
+    float b_centro_f = (float)cb / 255.0f;
+
+    ALLEGRO_COLOR tint_aura = al_map_rgba_f(r_borda_f, g_borda_f, b_borda_f, alpha_aura);
+    ALLEGRO_COLOR tint_nucleo = al_map_rgba_f(r_centro_f, g_centro_f, b_centro_f, alpha_centro);
+
+    const float offsets_x[4] = { -3.0f,  3.0f,  0.0f,  0.0f };
+    const float offsets_y[4] = {  0.0f,  0.0f, -3.0f,  3.0f };
+
+    if (sprite != NULL) {
+        float larg_img = al_get_bitmap_width(sprite);
+        float alt_img = al_get_bitmap_height(sprite);
+        float base_x = centro_x - (larg_img / 2.0f);
+        float base_y = centro_y - (alt_img / 2.0f);
+
+        // Passo 1 (Base): Desenha normalmente com cor_borda (Opacidade 1.0, Blender Padrão)
+        al_draw_tinted_bitmap(sprite, cor_borda, base_x, base_y, flags);
+
+        if (temp >= 400.0f) {
+            int op_ant, src_ant, dst_ant;
+            al_get_blender(&op_ant, &src_ant, &dst_ant);
+            al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_ONE);
+
+            // Passo 2 (Aura/Offsets): 4 offsets no modo ALLEGRO_ADD usando cor_borda com opacidade alpha_aura
+            for (int i = 0; i < 4; i++) {
+                al_draw_tinted_bitmap(sprite, tint_aura, base_x + offsets_x[i], base_y + offsets_y[i], flags);
+            }
+
+            // Passo 3 (Núcleo): Sprite centralizado 1 vez no modo ALLEGRO_ADD usando cor_centro com opacidade alpha_centro
+            al_draw_tinted_bitmap(sprite, tint_nucleo, base_x, base_y, flags);
+
+            al_set_blender(op_ant, src_ant, dst_ant);
+        }
+    } else {
+        ALLEGRO_COLOR cor_base = cor_borda;
+        if (temp < 400.0f) {
+            unsigned char tom_azul = clamp_canal_rgb((float)(200 - (frame_atual * 25)));
+            unsigned char tom_azul_b = clamp_canal_rgb((float)(tom_azul + 55));
+            cor_base = al_map_rgb(tom_azul, tom_azul, tom_azul_b);
+        }
+
+        float x1 = centro_x - larg_fallback / 2.0f;
+        float y1 = centro_y - alt_fallback / 2.0f;
+        float x2 = centro_x + larg_fallback / 2.0f;
+        float y2 = centro_y + alt_fallback / 2.0f;
+
+        // Passo 1 (Base)
+        al_draw_filled_rectangle(x1, y1, x2, y2, cor_base);
+
+        if (temp >= 400.0f) {
+            int op_ant, src_ant, dst_ant;
+            al_get_blender(&op_ant, &src_ant, &dst_ant);
+            al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_ONE);
+
+            // Passo 2 (Aura/Offsets)
+            for (int i = 0; i < 4; i++) {
+                al_draw_filled_rectangle(x1 + offsets_x[i], y1 + offsets_y[i],
+                                         x2 + offsets_x[i], y2 + offsets_y[i], tint_aura);
+            }
+
+            // Passo 3 (Núcleo)
+            al_draw_filled_rectangle(x1, y1, x2, y2, tint_nucleo);
+
+            al_set_blender(op_ant, src_ant, dst_ant);
+        }
+    }
 }
 
 void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item *arma_mop, Item *arma_soprador,
@@ -264,24 +365,8 @@ void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item 
     if (sala_atual == anomalia->sala_origem) {
         ALLEGRO_BITMAP *sprite_galio = (anomalia->frame_animacao == 1) ? anomalia->sprites_bre[anomalia->frame_atual] : anomalia->sprites_normal[anomalia->frame_atual];
         int flag_galio_flip = (anomalia->direcao_atual == DIR_ESQUERDA) ? ALLEGRO_FLIP_HORIZONTAL : 0;
-        ALLEGRO_COLOR cor_temp = obter_cor_temperatura(anomalia->temperatura);
-
-        if (sprite_galio != NULL) {
-            float larg_img = al_get_bitmap_width(sprite_galio);
-            float alt_img = al_get_bitmap_height(sprite_galio);
-            al_draw_tinted_bitmap(sprite_galio, cor_temp,
-                                  anomalia->x - (larg_img / 2.0f), anomalia->y - (alt_img / 2.0f), flag_galio_flip);
-        } else {
-            ALLEGRO_COLOR cor_prim = cor_temp;
-            if (anomalia->temperatura < 400.0f) {
-                unsigned char tom_azul = clamp_canal_rgb((float)(200 - (anomalia->frame_atual * 25)));
-                unsigned char tom_azul_b = clamp_canal_rgb((float)(tom_azul + 55));
-                cor_prim = al_map_rgb(tom_azul, tom_azul, tom_azul_b);
-            }
-            al_draw_filled_rectangle(anomalia->x - anomalia->w / 2.0f, anomalia->y - anomalia->h / 2.0f,
-                                     anomalia->x + anomalia->w / 2.0f, anomalia->y + anomalia->h / 2.0f,
-                                     cor_prim);
-        }
+        desenhar_sprite_quente(sprite_galio, anomalia->x, anomalia->y, anomalia->w, anomalia->h,
+                               flag_galio_flip, anomalia->temperatura, anomalia->frame_atual);
     }
 
     if (arma_mop && arma_mop->no_chao && arma_mop->sala_origem == sala_atual && arma_mop->sprite) {
@@ -376,9 +461,10 @@ void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item 
                 float alt_img = al_get_bitmap_height(sprite_final);
                 if (faxineiro->morreu) {
                     float chao_y = faxineiro->y + (faxineiro->h / 2.0f);
+                    float angulo_morte = (faxineiro->direcao_atual == DIR_DIREITA) ? (-ALLEGRO_PI / 2.0f) : (ALLEGRO_PI / 2.0f);
                     al_draw_rotated_bitmap(sprite_final, larg_img / 2.0f, alt_img / 2.0f,
                                            faxineiro->x, chao_y - (faxineiro->body_w / 2.0f),
-                                           ALLEGRO_PI / 2.0f, flag_espelhamento);
+                                           angulo_morte, flag_espelhamento);
                 } else {
                     float draw_x = faxineiro->x - (larg_img / 2.0f);
                     float draw_y = (faxineiro->y + faxineiro->h / 2.0f) - alt_img;

@@ -486,11 +486,21 @@ void game_run(Game *game) {
                 game->slot_sendo_remapeado = -1;
             }
             else if (game->estado_jogo == ESTADO_MENU_PRINCIPAL) {
+                bool save_existe = false;
+                FILE *f_nav = fopen("save.dat", "rb");
+                if (f_nav) { save_existe = true; fclose(f_nav); }
+
                 if (evento.keyboard.keycode == ALLEGRO_KEY_DOWN || evento.keyboard.keycode == ALLEGRO_KEY_S) {
                     game->opcao_menu = (game->opcao_menu + 1) % 4;
+                    if (game->opcao_menu == 1 && !save_existe) {
+                        game->opcao_menu = 2;
+                    }
                 }
                 else if (evento.keyboard.keycode == ALLEGRO_KEY_UP || evento.keyboard.keycode == ALLEGRO_KEY_W) {
                     game->opcao_menu = (game->opcao_menu - 1 + 4) % 4;
+                    if (game->opcao_menu == 1 && !save_existe) {
+                        game->opcao_menu = 0;
+                    }
                 }
                 else if (evento.keyboard.keycode == ALLEGRO_KEY_ENTER || evento.keyboard.keycode == ALLEGRO_KEY_SPACE) {
                     if (game->opcao_menu == 0) {
@@ -579,6 +589,7 @@ void game_run(Game *game) {
                         if (game->opcao_game_over == 0) {
                             reiniciar_campanha(game);
                         } else {
+                            remove("save.dat");
                             game->estado_jogo = ESTADO_MENU_PRINCIPAL;
                             game->opcao_menu = 0;
                         }
@@ -688,7 +699,11 @@ void game_run(Game *game) {
                 }
             }
             else if (game->estado_jogo == ESTADO_MENU_PRINCIPAL) {
+                bool save_existe = false;
+                FILE *f_hover = fopen("save.dat", "rb");
+                if (f_hover) { save_existe = true; fclose(f_hover); }
                 for (int i = 0; i < 4; i++) {
+                    if (i == 1 && !save_existe) continue;
                     float item_y = 90 + (i * 25);
                     if (mapa_mouse_x >= 100 && mapa_mouse_x <= 380 && mapa_mouse_y >= item_y && mapa_mouse_y <= item_y + 20) {
                         game->opcao_menu = i;
@@ -747,6 +762,7 @@ void game_run(Game *game) {
                             if (i == 0) {
                                 reiniciar_campanha(game);
                             } else {
+                                remove("save.dat");
                                 game->estado_jogo = ESTADO_MENU_PRINCIPAL;
                                 game->opcao_menu = 0;
                             }
@@ -758,7 +774,11 @@ void game_run(Game *game) {
                 }
             }
             else if (game->estado_jogo == ESTADO_MENU_PRINCIPAL && evento.mouse.button == 1) {
+                bool save_existe = false;
+                FILE *f_click = fopen("save.dat", "rb");
+                if (f_click) { save_existe = true; fclose(f_click); }
                 for (int i = 0; i < 4; i++) {
+                    if (i == 1 && !save_existe) continue;
                     float item_y = 90 + (i * 25);
                     if (mapa_mouse_x >= 100 && mapa_mouse_x <= 380 && mapa_mouse_y >= item_y && mapa_mouse_y <= item_y + 20) {
                         game->opcao_menu = i;
@@ -897,9 +917,11 @@ void game_run(Game *game) {
                         game->faxineiro.no_chao = true;
                         game->faxineiro.escalando = false;
                         for (int t = 0; t < MAX_TEXTOS_FLUTUANTES; t++) game->textos_flutuantes[t].ativo = false;
-                        salvar_jogo(game->nome_jogador, game->sala_atual, &game->faxineiro,
-                                    &game->arma_mop, &game->arma_soprador,
-                                    &game->refil_agua, &game->bateria, &game->kit_medico);
+                        if (!game->faxineiro.morreu) {
+                            salvar_jogo(game->nome_jogador, game->sala_atual, &game->faxineiro,
+                                        &game->arma_mop, &game->arma_soprador,
+                                        &game->refil_agua, &game->bateria, &game->kit_medico);
+                        }
                     }
                     if (game->timer_fade >= 60) game->estado_fade = 3;
                 }
