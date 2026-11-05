@@ -474,9 +474,13 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *a
         bool col_kit = (player_right > kit_medico->x) && (player_left < kit_medico->x + kit_medico->w) &&
                        (player_bottom > kit_medico->y) && (player_top < kit_medico->y + kit_medico->h);
         if (col_kit) {
+            float cura = 100.0f - faxineiro->barra_vida;
+            if (cura < 0.0f) cura = 0.0f;
+            char buffer[32];
+            sprintf(buffer, "+%.0f", cura);
+            instanciar_texto_flutuante(textos, max_textos, faxineiro->x, player_top - 10.0f, buffer, al_map_rgb(0, 255, 0));
             faxineiro->barra_vida = 100.0f;
             kit_medico->ativo = false;
-            instanciar_texto_flutuante(textos, max_textos, faxineiro->x, player_top - 10.0f, "* kit medico *", al_map_rgb(255, 255, 255));
         }
     }
 

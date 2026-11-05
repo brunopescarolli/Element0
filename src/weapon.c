@@ -1,7 +1,7 @@
 #include "weapon.h"
 
 void instanciar_texto_flutuante(TextoFlutuante *textos, int max_textos, float x, float y, const char *mensagem, ALLEGRO_COLOR cor) {
-    if (strcmp(mensagem, "-10") != 0) {
+    if (mensagem[0] != '-' && mensagem[0] != '+') {
         for (int t = 0; t < max_textos; t++) {
             if (textos[t].ativo && strcmp(textos[t].texto, mensagem) == 0) {
                 return;

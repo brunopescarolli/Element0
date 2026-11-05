@@ -180,24 +180,24 @@ void atualizar_inimigo(Inimigo *anomalia, Jogador *faxineiro,
                 anomalia->temperatura = TEMP_JOGADOR;
             }
         } else if (anomalia->temperatura > TEMP_JOGADOR) {
-            float taxa_resfriamento = (2.0f / (float)FPS);
+            float reducao_por_segundo = 2.0f * (anomalia->temperatura / 100.0f);
             if (anomalia->timer_resfriamento > 0) {
-                taxa_resfriamento *= 2.0f;
+                reducao_por_segundo *= 2.0f;
             }
-            anomalia->temperatura -= taxa_resfriamento;
+            anomalia->temperatura -= reducao_por_segundo / 60.0f;
             if (anomalia->temperatura < TEMP_JOGADOR) {
                 anomalia->temperatura = TEMP_JOGADOR;
             }
         }
     } else {
-        float taxa_resfriamento = (2.0f / (float)FPS);
+        float reducao_por_segundo = 2.0f * (anomalia->temperatura / 100.0f);
         if (anomalia->timer_resfriamento > 0) {
-            taxa_resfriamento *= 2.0f;
+            reducao_por_segundo *= 2.0f;
         }
-        anomalia->temperatura -= taxa_resfriamento;
+        anomalia->temperatura -= reducao_por_segundo / 60.0f;
     }
 
-    if (anomalia->temperatura < TEMP_ESTACAO) anomalia->temperatura = TEMP_ESTACAO;
+    if (anomalia->temperatura < 20.0f) anomalia->temperatura = 20.0f;
     if (anomalia->temperatura > 1500.0f) anomalia->temperatura = 1500.0f;
 
     if (anomalia->temperatura >= dados_anomalia.ponto_fusao && anomalia->estado_atual == SOLIDO) {
