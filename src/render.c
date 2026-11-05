@@ -45,6 +45,7 @@ void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item 
                     Escada *escadas, int total_escadas, Porta *portas, int total_portas,
                     Elevador *elevadores, int total_elevadores, TextoFlutuante *textos, int max_textos,
                     GameSprites *sprites, bool prop_na_frente, int estado_fade, int alpha_fade,
+                    float alpha_game_over, int opcao_game_over,
                     bool mostrar_hitbox, ALLEGRO_FONT *fonte, float largura_camera, float altura_camera) {
 
     bool eh_escadaria = (sala_atual >= 26 && sala_atual <= 31);
@@ -208,12 +209,32 @@ void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item 
     if (sala_atual == anomalia->sala_origem) {
         ALLEGRO_BITMAP *sprite_galio = (anomalia->frame_animacao == 1) ? anomalia->sprites_bre[anomalia->frame_atual] : anomalia->sprites_normal[anomalia->frame_atual];
         int flag_galio_flip = (anomalia->direcao_atual == DIR_ESQUERDA) ? ALLEGRO_FLIP_HORIZONTAL : 0;
+
+        float t_draper = 0.0f;
+        if (anomalia->temperatura >= PONTO_DRAPER) {
+            t_draper = (anomalia->temperatura - PONTO_DRAPER) / (1000.0f - PONTO_DRAPER);
+            if (t_draper < 0.0f) t_draper = 0.0f;
+            if (t_draper > 1.0f) t_draper = 1.0f;
+        }
+
         if (sprite_galio != NULL) {
-            float larg_img = al_get_bitmap_width(sprite_galio); float alt_img = al_get_bitmap_height(sprite_galio);
-            al_draw_bitmap(sprite_galio, anomalia->x - (larg_img / 2), anomalia->y - (alt_img / 2), flag_galio_flip);
+            float larg_img = al_get_bitmap_width(sprite_galio);
+            float alt_img = al_get_bitmap_height(sprite_galio);
+            unsigned char tint_r = 255;
+            unsigned char tint_g = (unsigned char)(255.0f + t_draper * (90.0f - 255.0f));
+            unsigned char tint_b = (unsigned char)(255.0f + t_draper * (15.0f - 255.0f));
+            al_draw_tinted_bitmap(sprite_galio, al_map_rgb(tint_r, tint_g, tint_b),
+                                  anomalia->x - (larg_img / 2.0f), anomalia->y - (alt_img / 2.0f), flag_galio_flip);
         } else {
-            int color_val = 200 - (anomalia->frame_atual * 25);
-            al_draw_filled_rectangle(anomalia->x - anomalia->w / 2, anomalia->y - anomalia->h / 2, anomalia->x + anomalia->w / 2, anomalia->y + anomalia->h / 2, al_map_rgb(color_val, color_val, color_val + 55));
+            float base_r = (float)(200 - (anomalia->frame_atual * 25));
+            float base_g = base_r;
+            float base_b = base_r + 55.0f;
+            unsigned char r = (unsigned char)(base_r + t_draper * (255.0f - base_r));
+            unsigned char g = (unsigned char)(base_g + t_draper * (90.0f - base_g));
+            unsigned char b = (unsigned char)(base_b + t_draper * (15.0f - base_b));
+            al_draw_filled_rectangle(anomalia->x - anomalia->w / 2.0f, anomalia->y - anomalia->h / 2.0f,
+                                     anomalia->x + anomalia->w / 2.0f, anomalia->y + anomalia->h / 2.0f,
+                                     al_map_rgb(r, g, b));
         }
     }
 
@@ -302,9 +323,27 @@ void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item 
     if (tem_sprites) {
         ALLEGRO_BITMAP *sprite_final = faxineiro->sprites[tipo_frame_desenhar];
         if (sprite_final != NULL) {
-            float larg_img = al_get_bitmap_width(sprite_final); float alt_img = al_get_bitmap_height(sprite_final);
-            float draw_x = faxineiro->x - (larg_img / 2.0); float draw_y = (faxineiro->y + faxineiro->h / 2.0) - alt_img;
-            al_draw_bitmap(sprite_final, draw_x, draw_y, flag_espelhamento);
+            float larg_img = al_get_bitmap_width(sprite_final);
+            float alt_img = al_get_bitmap_height(sprite_final);
+            if (faxineiro->morreu) {
+                float chao_y = faxineiro->y + (faxineiro->h / 2.0f);
+                al_draw_rotated_bitmap(sprite_final, larg_img / 2.0f, alt_img / 2.0f,
+                                       faxineiro->x, chao_y - (faxineiro->body_w / 2.0f),
+                                       ALLEGRO_PI / 2.0f, flag_espelhamento);
+            } else {
+                float draw_x = faxineiro->x - (larg_img / 2.0f);
+                float draw_y = (faxineiro->y + faxineiro->h / 2.0f) - alt_img;
+                al_draw_bitmap(sprite_final, draw_x, draw_y, flag_espelhamento);
+            }
+        }
+    } else {
+        float chao_y = faxineiro->y + (faxineiro->h / 2.0f);
+        if (faxineiro->morreu) {
+            al_draw_filled_rectangle(faxineiro->x - faxineiro->body_h / 2.0f, chao_y - faxineiro->body_w,
+                                     faxineiro->x + faxineiro->body_h / 2.0f, chao_y, al_map_rgb(100, 150, 255));
+        } else {
+            al_draw_filled_rectangle(faxineiro->x - faxineiro->body_w / 2.0f, chao_y - faxineiro->body_h,
+                                     faxineiro->x + faxineiro->body_w / 2.0f, chao_y, al_map_rgb(100, 150, 255));
         }
     }
 
@@ -491,6 +530,36 @@ void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item 
 
     // Fade entre salas (cobre a tela inteira em camera_ui)
     if (estado_fade > 0) al_draw_filled_rectangle(0, 0, LARGURA_MAPA, ALTURA_MAPA, al_map_rgba(0, 0, 0, alpha_fade));
+
+    // Overlay de Game Over ("VOCÊ MORREU")
+    if (faxineiro->morreu) {
+        float a_clamped = alpha_game_over;
+        if (a_clamped < 0.0f) a_clamped = 0.0f;
+        if (a_clamped > 255.0f) a_clamped = 255.0f;
+        unsigned char alpha_bg = (unsigned char)a_clamped;
+
+        al_draw_filled_rectangle(0, 0, LARGURA_MAPA, ALTURA_MAPA, al_map_rgba(0, 0, 0, alpha_bg));
+
+        // Texto "VOCÊ MORREU" centralizado em destaque (escala 2.0x)
+        ALLEGRO_TRANSFORM trans_ant = *al_get_current_transform();
+        ALLEGRO_TRANSFORM trans_titulo;
+        al_build_transform(&trans_titulo, LARGURA_MAPA / 2.0f, 85.0f, 2.0f, 2.0f, 0.0f);
+        al_compose_transform(&trans_titulo, &trans_ant);
+        al_use_transform(&trans_titulo);
+        al_draw_text(fonte, al_map_rgba(220, 40, 40, alpha_bg), 0.0f, 0.0f, ALLEGRO_ALIGN_CENTRE, "VOCÊ MORREU");
+        al_use_transform(&trans_ant);
+
+        const char *botoes_morte[2] = { "Novo Jogo", "Menu Principal" };
+        for (int i = 0; i < 2; i++) {
+            float btn_y1 = 140.0f + (i * 32.0f);
+            float btn_y2 = btn_y1 + 22.0f;
+            ALLEGRO_COLOR cor_btn = (opcao_game_over == i)
+                ? al_map_rgba(100, 255, 100, alpha_bg)
+                : al_map_rgba(200, 200, 200, alpha_bg);
+            al_draw_rectangle(160.0f, btn_y1, 320.0f, btn_y2, cor_btn, 1.5f);
+            al_draw_text(fonte, cor_btn, LARGURA_MAPA / 2.0f, btn_y1 + 7.0f, ALLEGRO_ALIGN_CENTRE, botoes_morte[i]);
+        }
+    }
 }
 
 void desenhar_ui(int estado_jogo, int opcao_menu, int opcao_confirma, int opcao_pause,

@@ -12,6 +12,33 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *a
 
     if (*estado_fade != 0) return;
 
+    if (faxineiro->morreu) {
+        input->eixo_x = 0.0f;
+        input->pulo = false;
+        input->atirando = false;
+        input->acao_pegar = false;
+        input->acao_soltar = false;
+        input->acao_entrar = false;
+        input->acao_descer = false;
+        faxineiro->escalando = false;
+        faxineiro->esta_andando = false;
+        faxineiro->frame_atual = 0;
+        soprador->ativo = false;
+
+        faxineiro->vel_y += GRAVIDADE;
+        faxineiro->y += faxineiro->vel_y;
+        faxineiro->no_chao = false;
+        resolve_platform_collisions(faxineiro->x, &faxineiro->y, faxineiro->w, faxineiro->h, &faxineiro->vel_y, &faxineiro->no_chao, *sala_atual, plataformas, total_plat, false);
+        resolve_ladder_collisions(faxineiro->x, &faxineiro->y, faxineiro->w, faxineiro->h, &faxineiro->vel_y, &faxineiro->no_chao, 0.0f, *sala_atual, escadas, total_escadas, false);
+        if (faxineiro->y + faxineiro->h / 2.0 > ALTURA_MAPA) {
+            faxineiro->y = ALTURA_MAPA - (faxineiro->h / 2.0);
+            faxineiro->vel_y = 0;
+            faxineiro->no_chao = true;
+        }
+        atualizar_projeteis(projeteis, max_proj, *sala_atual);
+        return;
+    }
+
     // Verificar contato com escada vertical estilo marinheiro (direcao == 0)
     int indice_escada_vertical = -1;
     for (int e = 0; e < total_escadas; e++) {
@@ -233,12 +260,31 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *a
 
     // Colisão com Inimigo (Anomalia de Gálio)
     if (*sala_atual == anomalia->sala_origem) {
+        float p_left = faxineiro->x - faxineiro->body_w / 2.0f;
+        float p_right = faxineiro->x + faxineiro->body_w / 2.0f;
+        float p_top = (faxineiro->y + faxineiro->h / 2.0f) - faxineiro->body_h;
+        float p_bottom = faxineiro->y + faxineiro->h / 2.0f;
+
+        bool colide_corpo_x = (p_right > anomalia->x - anomalia->w / 2.0f) && (p_left < anomalia->x + anomalia->w / 2.0f);
+        bool colide_corpo_y = (p_bottom > anomalia->y - anomalia->h / 2.0f) && (p_top < anomalia->y + anomalia->h / 2.0f);
+
         bool colide_inimigo_x = (faxineiro->x + faxineiro->w / 2 > anomalia->x - anomalia->w / 2) && (faxineiro->x - faxineiro->w / 2 < anomalia->x + anomalia->w / 2);
         bool colide_inimigo_y = (faxineiro->y + faxineiro->h / 2 > anomalia->y - anomalia->h / 2) && (faxineiro->y - faxineiro->h / 2 < anomalia->y + anomalia->h / 2);
 
-        if (colide_inimigo_x && colide_inimigo_y) {
+        if ((colide_inimigo_x && colide_inimigo_y) || (colide_corpo_x && colide_corpo_y)) {
             anomalia->recebendo_calor = true;
             anomalia->recebendo_calor_jogador = true;
+
+            // Dano térmico por contato no Ponto de Draper (>= 525.0 °C): 10.0 pontos por segundo
+            if (anomalia->temperatura >= PONTO_DRAPER) {
+                faxineiro->barra_vida -= (10.0f / (float)FPS);
+                if (faxineiro->barra_vida < 0.0f) {
+                    faxineiro->barra_vida = 0.0f;
+                }
+            }
+        }
+
+        if (colide_inimigo_x && colide_inimigo_y) {
             float pe_anterior = (faxineiro->y - faxineiro->vel_y) + faxineiro->h / 2;
             float topo_inimigo = anomalia->y - anomalia->h / 2;
             if (!faxineiro->escalando && faxineiro->vel_y >= 0 && pe_anterior <= topo_inimigo + 0.1 && anomalia->estado_atual == SOLIDO) {
@@ -438,26 +484,53 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *a
 
     // Verificação de morte (barra_vida <= 0% ou barra_radio >= 100%)
     if (faxineiro->barra_vida <= 0.0f || faxineiro->barra_radio >= 100.0f) {
-        faxineiro->barra_vida = 100.0f;
-        faxineiro->barra_radio = 0.0f;
-        faxineiro->barra_agua = 100.0f;
-        faxineiro->barra_bateria = 100.0f;
-        faxineiro->refil_agua_qtd = 0;
-        faxineiro->bateria_qtd = 0;
-        faxineiro->arma_slot_1 = ARMA_NENHUMA;
-        faxineiro->arma_slot_2 = ARMA_NENHUMA;
-        faxineiro->arma_equipada = ARMA_NENHUMA;
-        faxineiro->possui_mop = false;
-        faxineiro->possui_soprador = false;
-        faxineiro->possui_arma = false;
+        if (faxineiro->barra_vida < 0.0f) faxineiro->barra_vida = 0.0f;
+        if (faxineiro->barra_radio > 100.0f) faxineiro->barra_radio = 100.0f;
+
+        faxineiro->morreu = true;
         faxineiro->escalando = false;
+        faxineiro->esta_andando = false;
+        faxineiro->frame_atual = 0;
         soprador->ativo = false;
-        refil_agua->ativo = true;
-        bateria->ativo = true;
-        kit_medico->ativo = true;
-        *estado_fade = 1;
-        *proxima_sala = 0;
-        *proximo_x = 32.0f;
-        *proximo_chao_y = 127.0f;
+
+        input->eixo_x = 0.0f;
+        input->pulo = false;
+        input->atirando = false;
+        input->acao_pegar = false;
+        input->acao_soltar = false;
+        input->acao_entrar = false;
+        input->acao_descer = false;
+
+        // Larga automaticamente no chão o item/arma que estiver segurando na mão no momento da morte
+        if (faxineiro->arma_equipada == ARMA_MOP && faxineiro->possui_mop) {
+            arma_mop->no_chao = true;
+            arma_mop->x = faxineiro->x;
+            arma_mop->y = faxineiro->y;
+            arma_mop->vel_y = 0.0f;
+            arma_mop->sala_origem = *sala_atual;
+            faxineiro->possui_mop = false;
+            if (faxineiro->arma_slot_1 == ARMA_MOP) {
+                faxineiro->arma_slot_1 = faxineiro->arma_slot_2;
+                faxineiro->arma_slot_2 = ARMA_NENHUMA;
+            } else if (faxineiro->arma_slot_2 == ARMA_MOP) {
+                faxineiro->arma_slot_2 = ARMA_NENHUMA;
+            }
+            faxineiro->arma_equipada = ARMA_NENHUMA;
+        } else if (faxineiro->arma_equipada == ARMA_SOPRADOR && faxineiro->possui_soprador) {
+            arma_soprador->no_chao = true;
+            arma_soprador->x = faxineiro->x;
+            arma_soprador->y = faxineiro->y;
+            arma_soprador->vel_y = 0.0f;
+            arma_soprador->sala_origem = *sala_atual;
+            faxineiro->possui_soprador = false;
+            if (faxineiro->arma_slot_1 == ARMA_SOPRADOR) {
+                faxineiro->arma_slot_1 = faxineiro->arma_slot_2;
+                faxineiro->arma_slot_2 = ARMA_NENHUMA;
+            } else if (faxineiro->arma_slot_2 == ARMA_SOPRADOR) {
+                faxineiro->arma_slot_2 = ARMA_NENHUMA;
+            }
+            faxineiro->arma_equipada = ARMA_NENHUMA;
+        }
+        faxineiro->possui_arma = (faxineiro->possui_mop || faxineiro->possui_soprador);
     }
 }

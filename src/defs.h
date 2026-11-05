@@ -30,6 +30,7 @@
 
 #define TEMP_ESTACAO 20.0
 #define TEMP_JOGADOR 36.0
+#define PONTO_DRAPER 525.0f
 #define TEMP_INDETERMINADA 99999.0
 #define MAX_ELEMENTOS 118
 
@@ -110,6 +111,7 @@ typedef struct {
     float barra_bateria;
     int refil_agua_qtd;
     int bateria_qtd;
+    bool morreu;
 } Jogador;
 
 typedef struct {

@@ -25,7 +25,9 @@ typedef struct {
     int opcao_confirma;
     int opcao_pause;
     int opcao_config;
+    int opcao_game_over;
     int slot_sendo_remapeado;
+    float alpha_game_over;
 
     char nome_jogador[30];
     Controles controles;

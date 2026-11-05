@@ -25,6 +25,7 @@ void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item 
                     Escada *escadas, int total_escadas, Porta *portas, int total_portas,
                     Elevador *elevadores, int total_elevadores, TextoFlutuante *textos, int max_textos,
                     GameSprites *sprites, bool prop_na_frente, int estado_fade, int alpha_fade,
+                    float alpha_game_over, int opcao_game_over,
                     bool mostrar_hitbox, ALLEGRO_FONT *fonte, float largura_camera, float altura_camera);
 
 void desenhar_ui(int estado_jogo, int opcao_menu, int opcao_confirma, int opcao_pause,
