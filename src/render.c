@@ -39,6 +39,61 @@ static const char *obter_nome_sala(int sala) {
     return "Desconhecida";
 }
 
+static unsigned char clamp_canal_rgb(float valor) {
+    if (valor < 0.0f) return 0;
+    if (valor > 255.0f) return 255;
+    return (unsigned char)(valor + 0.5f);
+}
+
+ALLEGRO_COLOR obter_cor_temperatura(float temp) {
+    float r = 255.0f;
+    float g = 255.0f;
+    float b = 255.0f;
+
+    if (temp < 400.0f) {
+        r = 255.0f;
+        g = 255.0f;
+        b = 255.0f;
+    } else if (temp < 525.0f) {
+        // 400 °C a 525 °C: Branco (255, 255, 255) -> Vermelho Bem Escuro (100, 0, 0)
+        float t = (temp - 400.0f) / (525.0f - 400.0f);
+        r = 255.0f + t * (100.0f - 255.0f);
+        g = 255.0f + t * (0.0f - 255.0f);
+        b = 255.0f + t * (0.0f - 255.0f);
+    } else if (temp < 700.0f) {
+        // 525 °C a 700 °C: Vermelho Bem Escuro (100, 0, 0) -> Vermelho Vivo (255, 0, 0)
+        float t = (temp - 525.0f) / (700.0f - 525.0f);
+        r = 100.0f + t * (255.0f - 100.0f);
+        g = 0.0f;
+        b = 0.0f;
+    } else if (temp < 900.0f) {
+        // 700 °C a 900 °C: Vermelho Vivo (255, 0, 0) -> Laranja (255, 127, 0)
+        float t = (temp - 700.0f) / (900.0f - 700.0f);
+        r = 255.0f;
+        g = 0.0f + t * (127.0f - 0.0f);
+        b = 0.0f;
+    } else if (temp < 1100.0f) {
+        // 900 °C a 1100 °C: Laranja (255, 127, 0) -> Amarelo (255, 255, 0)
+        float t = (temp - 900.0f) / (1100.0f - 900.0f);
+        r = 255.0f;
+        g = 127.0f + t * (255.0f - 127.0f);
+        b = 0.0f;
+    } else if (temp < 1300.0f) {
+        // 1100 °C a 1300 °C: Amarelo (255, 255, 0) -> Branco Brilhante (255, 255, 255)
+        float t = (temp - 1100.0f) / (1300.0f - 1100.0f);
+        r = 255.0f;
+        g = 255.0f;
+        b = 0.0f + t * (255.0f - 0.0f);
+    } else {
+        // 1300 °C+: Estado de incandescência total (Branco Brilhante)
+        r = 255.0f;
+        g = 255.0f;
+        b = 255.0f;
+    }
+
+    return al_map_rgb(clamp_canal_rgb(r), clamp_canal_rgb(g), clamp_canal_rgb(b));
+}
+
 void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item *arma_mop, Item *arma_soprador,
                     Soprador *soprador, Coletavel *refil_agua, Coletavel *bateria, Coletavel *kit_medico,
                     Projetil *projeteis, int max_proj, Plataforma *plataformas, int total_plat,
@@ -209,32 +264,23 @@ void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item 
     if (sala_atual == anomalia->sala_origem) {
         ALLEGRO_BITMAP *sprite_galio = (anomalia->frame_animacao == 1) ? anomalia->sprites_bre[anomalia->frame_atual] : anomalia->sprites_normal[anomalia->frame_atual];
         int flag_galio_flip = (anomalia->direcao_atual == DIR_ESQUERDA) ? ALLEGRO_FLIP_HORIZONTAL : 0;
-
-        float t_draper = 0.0f;
-        if (anomalia->temperatura >= PONTO_DRAPER) {
-            t_draper = (anomalia->temperatura - PONTO_DRAPER) / (1000.0f - PONTO_DRAPER);
-            if (t_draper < 0.0f) t_draper = 0.0f;
-            if (t_draper > 1.0f) t_draper = 1.0f;
-        }
+        ALLEGRO_COLOR cor_temp = obter_cor_temperatura(anomalia->temperatura);
 
         if (sprite_galio != NULL) {
             float larg_img = al_get_bitmap_width(sprite_galio);
             float alt_img = al_get_bitmap_height(sprite_galio);
-            unsigned char tint_r = 255;
-            unsigned char tint_g = (unsigned char)(255.0f + t_draper * (90.0f - 255.0f));
-            unsigned char tint_b = (unsigned char)(255.0f + t_draper * (15.0f - 255.0f));
-            al_draw_tinted_bitmap(sprite_galio, al_map_rgb(tint_r, tint_g, tint_b),
+            al_draw_tinted_bitmap(sprite_galio, cor_temp,
                                   anomalia->x - (larg_img / 2.0f), anomalia->y - (alt_img / 2.0f), flag_galio_flip);
         } else {
-            float base_r = (float)(200 - (anomalia->frame_atual * 25));
-            float base_g = base_r;
-            float base_b = base_r + 55.0f;
-            unsigned char r = (unsigned char)(base_r + t_draper * (255.0f - base_r));
-            unsigned char g = (unsigned char)(base_g + t_draper * (90.0f - base_g));
-            unsigned char b = (unsigned char)(base_b + t_draper * (15.0f - base_b));
+            ALLEGRO_COLOR cor_prim = cor_temp;
+            if (anomalia->temperatura < 400.0f) {
+                unsigned char tom_azul = clamp_canal_rgb((float)(200 - (anomalia->frame_atual * 25)));
+                unsigned char tom_azul_b = clamp_canal_rgb((float)(tom_azul + 55));
+                cor_prim = al_map_rgb(tom_azul, tom_azul, tom_azul_b);
+            }
             al_draw_filled_rectangle(anomalia->x - anomalia->w / 2.0f, anomalia->y - anomalia->h / 2.0f,
                                      anomalia->x + anomalia->w / 2.0f, anomalia->y + anomalia->h / 2.0f,
-                                     al_map_rgb(r, g, b));
+                                     cor_prim);
         }
     }
 
@@ -320,30 +366,34 @@ void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item 
         }
     }
 
-    if (tem_sprites) {
-        ALLEGRO_BITMAP *sprite_final = faxineiro->sprites[tipo_frame_desenhar];
-        if (sprite_final != NULL) {
-            float larg_img = al_get_bitmap_width(sprite_final);
-            float alt_img = al_get_bitmap_height(sprite_final);
-            if (faxineiro->morreu) {
-                float chao_y = faxineiro->y + (faxineiro->h / 2.0f);
-                al_draw_rotated_bitmap(sprite_final, larg_img / 2.0f, alt_img / 2.0f,
-                                       faxineiro->x, chao_y - (faxineiro->body_w / 2.0f),
-                                       ALLEGRO_PI / 2.0f, flag_espelhamento);
-            } else {
-                float draw_x = faxineiro->x - (larg_img / 2.0f);
-                float draw_y = (faxineiro->y + faxineiro->h / 2.0f) - alt_img;
-                al_draw_bitmap(sprite_final, draw_x, draw_y, flag_espelhamento);
+    bool visivel_dano = faxineiro->morreu || (faxineiro->timer_dano <= 0) || (((faxineiro->timer_dano / 5) % 2) == 0);
+
+    if (visivel_dano) {
+        if (tem_sprites) {
+            ALLEGRO_BITMAP *sprite_final = faxineiro->sprites[tipo_frame_desenhar];
+            if (sprite_final != NULL) {
+                float larg_img = al_get_bitmap_width(sprite_final);
+                float alt_img = al_get_bitmap_height(sprite_final);
+                if (faxineiro->morreu) {
+                    float chao_y = faxineiro->y + (faxineiro->h / 2.0f);
+                    al_draw_rotated_bitmap(sprite_final, larg_img / 2.0f, alt_img / 2.0f,
+                                           faxineiro->x, chao_y - (faxineiro->body_w / 2.0f),
+                                           ALLEGRO_PI / 2.0f, flag_espelhamento);
+                } else {
+                    float draw_x = faxineiro->x - (larg_img / 2.0f);
+                    float draw_y = (faxineiro->y + faxineiro->h / 2.0f) - alt_img;
+                    al_draw_bitmap(sprite_final, draw_x, draw_y, flag_espelhamento);
+                }
             }
-        }
-    } else {
-        float chao_y = faxineiro->y + (faxineiro->h / 2.0f);
-        if (faxineiro->morreu) {
-            al_draw_filled_rectangle(faxineiro->x - faxineiro->body_h / 2.0f, chao_y - faxineiro->body_w,
-                                     faxineiro->x + faxineiro->body_h / 2.0f, chao_y, al_map_rgb(100, 150, 255));
         } else {
-            al_draw_filled_rectangle(faxineiro->x - faxineiro->body_w / 2.0f, chao_y - faxineiro->body_h,
-                                     faxineiro->x + faxineiro->body_w / 2.0f, chao_y, al_map_rgb(100, 150, 255));
+            float chao_y = faxineiro->y + (faxineiro->h / 2.0f);
+            if (faxineiro->morreu) {
+                al_draw_filled_rectangle(faxineiro->x - faxineiro->body_h / 2.0f, chao_y - faxineiro->body_w,
+                                         faxineiro->x + faxineiro->body_h / 2.0f, chao_y, al_map_rgb(100, 150, 255));
+            } else {
+                al_draw_filled_rectangle(faxineiro->x - faxineiro->body_w / 2.0f, chao_y - faxineiro->body_h,
+                                         faxineiro->x + faxineiro->body_w / 2.0f, chao_y, al_map_rgb(100, 150, 255));
+            }
         }
     }
 
@@ -393,7 +443,9 @@ void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item 
     for (int t = 0; t < max_textos; t++) {
         if (!textos[t].ativo) continue;
         unsigned char opacidade = (unsigned char)textos[t].alpha;
-        al_draw_text(fonte, al_map_rgba(255, 255, 255, opacidade), textos[t].x, textos[t].y, ALLEGRO_ALIGN_CENTRE, textos[t].texto);
+        unsigned char cr, cg, cb;
+        al_unmap_rgb(textos[t].cor, &cr, &cg, &cb);
+        al_draw_text(fonte, al_map_rgba(cr, cg, cb, opacidade), textos[t].x, textos[t].y, ALLEGRO_ALIGN_CENTRE, textos[t].texto);
     }
 
     if (mostrar_hitbox && estado_fade == 0) {

@@ -19,6 +19,8 @@ typedef struct {
     ALLEGRO_BITMAP *sprite_water;
 } GameSprites;
 
+ALLEGRO_COLOR obter_cor_temperatura(float temp);
+
 void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item *arma_mop, Item *arma_soprador,
                     Soprador *soprador, Coletavel *refil_agua, Coletavel *bateria, Coletavel *kit_medico,
                     Projetil *projeteis, int max_proj, Plataforma *plataformas, int total_plat,

@@ -146,6 +146,7 @@ bool carregar_jogo(char *nome, int *sala, Jogador *faxineiro,
         faxineiro->no_chao = true;
         faxineiro->escalando = false;
         faxineiro->esta_andando = false;
+        faxineiro->timer_dano = 0;
         faxineiro->morreu = false;
 
         faxineiro->possui_mop = dados.possui_mop;

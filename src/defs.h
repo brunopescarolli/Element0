@@ -111,6 +111,7 @@ typedef struct {
     float barra_bateria;
     int refil_agua_qtd;
     int bateria_qtd;
+    int timer_dano;
     bool morreu;
 } Jogador;
 
@@ -156,6 +157,7 @@ typedef struct {
     float alpha;
     int timer;
     bool ativo;
+    ALLEGRO_COLOR cor;
 } TextoFlutuante;
 
 typedef struct {

@@ -1,9 +1,11 @@
 #include "weapon.h"
 
-void instanciar_texto_flutuante(TextoFlutuante *textos, int max_textos, float x, float y, const char *mensagem) {
-    for (int t = 0; t < max_textos; t++) {
-        if (textos[t].ativo && strcmp(textos[t].texto, mensagem) == 0) {
-            return;
+void instanciar_texto_flutuante(TextoFlutuante *textos, int max_textos, float x, float y, const char *mensagem, ALLEGRO_COLOR cor) {
+    if (strcmp(mensagem, "-10") != 0) {
+        for (int t = 0; t < max_textos; t++) {
+            if (textos[t].ativo && strcmp(textos[t].texto, mensagem) == 0) {
+                return;
+            }
         }
     }
     int slot = -1;
@@ -23,6 +25,7 @@ void instanciar_texto_flutuante(TextoFlutuante *textos, int max_textos, float x,
     textos[slot].alpha = 255.0f;
     textos[slot].timer = 60;
     textos[slot].ativo = true;
+    textos[slot].cor = cor;
 }
 
 void disparar_arma_jogador(Jogador *faxineiro, Projetil *projeteis, int max_proj, TextoFlutuante *textos, int max_textos) {
@@ -34,7 +37,7 @@ void disparar_arma_jogador(Jogador *faxineiro, Projetil *projeteis, int max_proj
             faxineiro->barra_agua = 100.0f;
         } else {
             float player_top = (faxineiro->y + faxineiro->h / 2.0f) - faxineiro->body_h;
-            instanciar_texto_flutuante(textos, max_textos, faxineiro->x, player_top - 10.0f, "* sem água *");
+            instanciar_texto_flutuante(textos, max_textos, faxineiro->x, player_top - 10.0f, "* sem água *", al_map_rgb(255, 255, 255));
             return;
         }
     }
@@ -105,7 +108,7 @@ void atualizar_soprador(Jogador *faxineiro, Soprador *soprador, bool atirando, T
         } else {
             soprador->ativo = false;
             float player_top = (faxineiro->y + faxineiro->h / 2.0f) - faxineiro->body_h;
-            instanciar_texto_flutuante(textos, max_textos, faxineiro->x, player_top - 10.0f, "* sem bateria *");
+            instanciar_texto_flutuante(textos, max_textos, faxineiro->x, player_top - 10.0f, "* sem bateria *", al_map_rgb(255, 255, 255));
         }
     } else {
         soprador->ativo = false;

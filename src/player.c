@@ -39,6 +39,10 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *a
         return;
     }
 
+    if (faxineiro->timer_dano > 0) {
+        faxineiro->timer_dano--;
+    }
+
     // Verificar contato com escada vertical estilo marinheiro (direcao == 0)
     int indice_escada_vertical = -1;
     for (int e = 0; e < total_escadas; e++) {
@@ -275,12 +279,14 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *a
             anomalia->recebendo_calor = true;
             anomalia->recebendo_calor_jogador = true;
 
-            // Dano térmico por contato no Ponto de Draper (>= 525.0 °C): 10.0 pontos por segundo
-            if (anomalia->temperatura >= PONTO_DRAPER) {
-                faxineiro->barra_vida -= (10.0f / (float)FPS);
+            // Dano térmico por "tick" (I-Frames de 60 frames / 1s) ao colidir com elemento quente
+            if (anomalia->temperatura >= 400.0f && faxineiro->timer_dano <= 0) {
+                faxineiro->barra_vida -= 10.0f;
                 if (faxineiro->barra_vida < 0.0f) {
                     faxineiro->barra_vida = 0.0f;
                 }
+                faxineiro->timer_dano = 60;
+                instanciar_texto_flutuante(textos, max_textos, faxineiro->x, p_top - 10.0f, "-10", al_map_rgb(255, 0, 0));
             }
         }
 
@@ -351,7 +357,7 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *a
             if (faxineiro->arma_equipada == ARMA_NENHUMA) {
                 faxineiro->arma_equipada = ARMA_MOP;
             }
-            instanciar_texto_flutuante(textos, max_textos, faxineiro->x, player_top_item - 10.0f, "* mop *");
+            instanciar_texto_flutuante(textos, max_textos, faxineiro->x, player_top_item - 10.0f, "* mop *", al_map_rgb(255, 255, 255));
             input->acao_pegar = false;
         } else if (sop_alcance) {
             arma_soprador->no_chao = false;
@@ -364,7 +370,7 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *a
             if (faxineiro->arma_equipada == ARMA_NENHUMA) {
                 faxineiro->arma_equipada = ARMA_SOPRADOR;
             }
-            instanciar_texto_flutuante(textos, max_textos, faxineiro->x, player_top_item - 10.0f, "* soprador termico *");
+            instanciar_texto_flutuante(textos, max_textos, faxineiro->x, player_top_item - 10.0f, "* soprador termico *", al_map_rgb(255, 255, 255));
             input->acao_pegar = false;
         }
 
@@ -450,7 +456,7 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *a
         if (col_agua && faxineiro->refil_agua_qtd < 3) {
             faxineiro->refil_agua_qtd++;
             refil_agua->ativo = false;
-            instanciar_texto_flutuante(textos, max_textos, faxineiro->x, player_top - 10.0f, "* refil de agua *");
+            instanciar_texto_flutuante(textos, max_textos, faxineiro->x, player_top - 10.0f, "* refil de agua *", al_map_rgb(255, 255, 255));
         }
     }
 
@@ -460,7 +466,7 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *a
         if (col_bat && faxineiro->bateria_qtd < 3) {
             faxineiro->bateria_qtd++;
             bateria->ativo = false;
-            instanciar_texto_flutuante(textos, max_textos, faxineiro->x, player_top - 10.0f, "* bateria *");
+            instanciar_texto_flutuante(textos, max_textos, faxineiro->x, player_top - 10.0f, "* bateria *", al_map_rgb(255, 255, 255));
         }
     }
 
@@ -470,7 +476,7 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *a
         if (col_kit) {
             faxineiro->barra_vida = 100.0f;
             kit_medico->ativo = false;
-            instanciar_texto_flutuante(textos, max_textos, faxineiro->x, player_top - 10.0f, "* kit medico *");
+            instanciar_texto_flutuante(textos, max_textos, faxineiro->x, player_top - 10.0f, "* kit medico *", al_map_rgb(255, 255, 255));
         }
     }
 
@@ -488,6 +494,7 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *a
         if (faxineiro->barra_radio > 100.0f) faxineiro->barra_radio = 100.0f;
 
         faxineiro->morreu = true;
+        faxineiro->timer_dano = 0;
         faxineiro->escalando = false;
         faxineiro->esta_andando = false;
         faxineiro->frame_atual = 0;

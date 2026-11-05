@@ -39,6 +39,7 @@ static void reiniciar_campanha(Game *game) {
     game->faxineiro.barra_bateria = 100.0f;
     game->faxineiro.refil_agua_qtd = 0;
     game->faxineiro.bateria_qtd = 0;
+    game->faxineiro.timer_dano = 0;
     game->faxineiro.morreu = false;
 
     game->arma_mop.sala_origem = 0;
@@ -159,6 +160,7 @@ bool game_init(Game *game) {
     game->faxineiro.barra_bateria = 100.0f;
     game->faxineiro.refil_agua_qtd = 0;
     game->faxineiro.bateria_qtd = 0;
+    game->faxineiro.timer_dano = 0;
     game->faxineiro.morreu = false;
 
     game->faxineiro.sprites[FRAME_IDLE]  = al_load_bitmap("assets/sprites/front_idle.png");
@@ -971,6 +973,7 @@ void game_run(Game *game) {
                                         game->textos_flutuantes[t].alpha = 255.0f;
                                         game->textos_flutuantes[t].timer = 60;
                                         game->textos_flutuantes[t].ativo = true;
+                                        game->textos_flutuantes[t].cor = al_map_rgb(255, 255, 255);
                                         break;
                                     }
                                 }
