@@ -3,9 +3,11 @@
 #include "weapon.h"
 #include "elementos.h"
 
-void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Inimigo *anomalia,
-                       Plataforma *plataformas, int total_plat, Escada *escadas, int total_escadas,
+void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *arma_soprador,
+                       Soprador *soprador, Coletavel *refil_agua, Coletavel *bateria, Coletavel *kit_medico,
+                       Inimigo *anomalia, Plataforma *plataformas, int total_plat, Escada *escadas, int total_escadas,
                        Porta *portas, int total_portas, Projetil *projeteis, int max_proj,
+                       TextoFlutuante *textos, int max_textos,
                        int *sala_atual, int *estado_fade, int *proxima_sala, float *proximo_x, float *proximo_chao_y) {
 
     if (*estado_fade != 0) return;
@@ -236,6 +238,7 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Inimigo
 
         if (colide_inimigo_x && colide_inimigo_y) {
             anomalia->recebendo_calor = true;
+            anomalia->recebendo_calor_jogador = true;
             float pe_anterior = (faxineiro->y - faxineiro->vel_y) + faxineiro->h / 2;
             float topo_inimigo = anomalia->y - anomalia->h / 2;
             if (!faxineiro->escalando && faxineiro->vel_y >= 0 && pe_anterior <= topo_inimigo + 0.1 && anomalia->estado_atual == SOLIDO) {
@@ -265,24 +268,196 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Inimigo
         else { if (faxineiro->frame_atual > 1) faxineiro->frame_atual = 0; }
     }
 
-    // Item (Mop)
-    if (arma_mop->no_chao && arma_mop->sala_origem == *sala_atual) {
-        float dx_item = faxineiro->x - arma_mop->x; float dy_item = faxineiro->y - arma_mop->y;
-        if (input->acao_pegar && !faxineiro->possui_arma) {
-            if ((dx_item * dx_item) + (dy_item * dy_item) <= (arma_mop->raio_interacao * arma_mop->raio_interacao)) {
-                arma_mop->no_chao = false; faxineiro->possui_arma = true;
+    // Itens (Mop e Soprador) - Pegar
+    if (input->acao_pegar) {
+        float player_top_item = (faxineiro->y + faxineiro->h / 2.0f) - faxineiro->body_h;
+        bool mop_alcance = false;
+        float dist_sq_mop = 999999.0f;
+        if (arma_mop->no_chao && arma_mop->sala_origem == *sala_atual && !faxineiro->possui_mop) {
+            float dx_item = faxineiro->x - arma_mop->x;
+            float dy_item = faxineiro->y - arma_mop->y;
+            dist_sq_mop = (dx_item * dx_item) + (dy_item * dy_item);
+            if (dist_sq_mop <= (arma_mop->raio_interacao * arma_mop->raio_interacao)) {
+                mop_alcance = true;
             }
         }
+
+        bool sop_alcance = false;
+        float dist_sq_sop = 999999.0f;
+        if (arma_soprador->no_chao && arma_soprador->sala_origem == *sala_atual && !faxineiro->possui_soprador) {
+            float dx_sop = faxineiro->x - arma_soprador->x;
+            float dy_sop = faxineiro->y - arma_soprador->y;
+            dist_sq_sop = (dx_sop * dx_sop) + (dy_sop * dy_sop);
+            if (dist_sq_sop <= (arma_soprador->raio_interacao * arma_soprador->raio_interacao)) {
+                sop_alcance = true;
+            }
+        }
+
+        // Pega com sucesso O PRIMEIRO item detectado na colisão (o mais próximo); para o segundo aperta E de novo
+        if (mop_alcance && (!sop_alcance || dist_sq_mop <= dist_sq_sop)) {
+            arma_mop->no_chao = false;
+            faxineiro->possui_mop = true;
+            if (faxineiro->arma_slot_1 == ARMA_NENHUMA) {
+                faxineiro->arma_slot_1 = ARMA_MOP;
+            } else if (faxineiro->arma_slot_2 == ARMA_NENHUMA) {
+                faxineiro->arma_slot_2 = ARMA_MOP;
+            }
+            if (faxineiro->arma_equipada == ARMA_NENHUMA) {
+                faxineiro->arma_equipada = ARMA_MOP;
+            }
+            instanciar_texto_flutuante(textos, max_textos, faxineiro->x, player_top_item - 10.0f, "* mop *");
+            input->acao_pegar = false;
+        } else if (sop_alcance) {
+            arma_soprador->no_chao = false;
+            faxineiro->possui_soprador = true;
+            if (faxineiro->arma_slot_1 == ARMA_NENHUMA) {
+                faxineiro->arma_slot_1 = ARMA_SOPRADOR;
+            } else if (faxineiro->arma_slot_2 == ARMA_NENHUMA) {
+                faxineiro->arma_slot_2 = ARMA_SOPRADOR;
+            }
+            if (faxineiro->arma_equipada == ARMA_NENHUMA) {
+                faxineiro->arma_equipada = ARMA_SOPRADOR;
+            }
+            instanciar_texto_flutuante(textos, max_textos, faxineiro->x, player_top_item - 10.0f, "* soprador termico *");
+            input->acao_pegar = false;
+        }
+
+        faxineiro->possui_arma = (faxineiro->possui_mop || faxineiro->possui_soprador);
     }
-    if (input->acao_soltar && faxineiro->possui_arma && !arma_mop->no_chao) {
-        arma_mop->no_chao = true; arma_mop->x = faxineiro->x; arma_mop->y = faxineiro->y; arma_mop->vel_y = 0.0; arma_mop->sala_origem = *sala_atual; faxineiro->possui_arma = false;
+
+    // Itens (Mop e Soprador) - Soltar arma equipada
+    if (input->acao_soltar) {
+        if (faxineiro->arma_equipada == ARMA_MOP && faxineiro->possui_mop) {
+            arma_mop->no_chao = true;
+            arma_mop->x = faxineiro->x;
+            arma_mop->y = faxineiro->y;
+            arma_mop->vel_y = 0.0f;
+            arma_mop->sala_origem = *sala_atual;
+            faxineiro->possui_mop = false;
+            if (faxineiro->arma_slot_1 == ARMA_MOP) {
+                faxineiro->arma_slot_1 = faxineiro->arma_slot_2;
+                faxineiro->arma_slot_2 = ARMA_NENHUMA;
+            } else if (faxineiro->arma_slot_2 == ARMA_MOP) {
+                faxineiro->arma_slot_2 = ARMA_NENHUMA;
+            }
+            if (faxineiro->possui_soprador) {
+                faxineiro->arma_equipada = ARMA_SOPRADOR;
+            } else {
+                faxineiro->arma_equipada = ARMA_NENHUMA;
+            }
+            input->acao_soltar = false;
+        } else if (faxineiro->arma_equipada == ARMA_SOPRADOR && faxineiro->possui_soprador) {
+            arma_soprador->no_chao = true;
+            arma_soprador->x = faxineiro->x;
+            arma_soprador->y = faxineiro->y;
+            arma_soprador->vel_y = 0.0f;
+            arma_soprador->sala_origem = *sala_atual;
+            faxineiro->possui_soprador = false;
+            if (faxineiro->arma_slot_1 == ARMA_SOPRADOR) {
+                faxineiro->arma_slot_1 = faxineiro->arma_slot_2;
+                faxineiro->arma_slot_2 = ARMA_NENHUMA;
+            } else if (faxineiro->arma_slot_2 == ARMA_SOPRADOR) {
+                faxineiro->arma_slot_2 = ARMA_NENHUMA;
+            }
+            if (faxineiro->possui_mop) {
+                faxineiro->arma_equipada = ARMA_MOP;
+            } else {
+                faxineiro->arma_equipada = ARMA_NENHUMA;
+            }
+            input->acao_soltar = false;
+        } else {
+            input->acao_soltar = false;
+        }
+        faxineiro->possui_arma = (faxineiro->possui_mop || faxineiro->possui_soprador);
     }
 
     if (faxineiro->cooldown > 0) faxineiro->cooldown--;
 
-    // Disparo e atualização de projéteis
+    // Disparo do Mop, Soprador Térmico e atualização de projéteis
     if (input->atirando) {
-        disparar_arma_jogador(faxineiro, projeteis, max_proj);
+        disparar_arma_jogador(faxineiro, projeteis, max_proj, textos, max_textos);
     }
+    atualizar_soprador(faxineiro, soprador, input->atirando, textos, max_textos);
     atualizar_projeteis(projeteis, max_proj, *sala_atual);
+
+    // Hitbox de chamas do Soprador Térmico aquece a anomalia
+    if (soprador->ativo && *sala_atual == anomalia->sala_origem) {
+        bool chama_x = (soprador->x + soprador->w > anomalia->x - anomalia->w / 2.0f) &&
+                       (soprador->x < anomalia->x + anomalia->w / 2.0f);
+        bool chama_y = (soprador->y + soprador->h > anomalia->y - anomalia->h / 2.0f) &&
+                       (soprador->y < anomalia->y + anomalia->h / 2.0f);
+        if (chama_x && chama_y) {
+            anomalia->recebendo_calor = true;
+            anomalia->recebendo_calor_soprador = true;
+        }
+    }
+
+    // Coleta de itens consumíveis (refil_agua, bateria e kit_medico)
+    float player_left = faxineiro->x - faxineiro->body_w / 2.0f;
+    float player_right = faxineiro->x + faxineiro->body_w / 2.0f;
+    float player_top = (faxineiro->y + faxineiro->h / 2.0f) - faxineiro->body_h;
+    float player_bottom = faxineiro->y + faxineiro->h / 2.0f;
+
+    if (refil_agua->ativo && refil_agua->sala == *sala_atual) {
+        bool col_agua = (player_right > refil_agua->x) && (player_left < refil_agua->x + refil_agua->w) &&
+                        (player_bottom > refil_agua->y) && (player_top < refil_agua->y + refil_agua->h);
+        if (col_agua && faxineiro->refil_agua_qtd < 3) {
+            faxineiro->refil_agua_qtd++;
+            refil_agua->ativo = false;
+            instanciar_texto_flutuante(textos, max_textos, faxineiro->x, player_top - 10.0f, "* refil de agua *");
+        }
+    }
+
+    if (bateria->ativo && bateria->sala == *sala_atual) {
+        bool col_bat = (player_right > bateria->x) && (player_left < bateria->x + bateria->w) &&
+                       (player_bottom > bateria->y) && (player_top < bateria->y + bateria->h);
+        if (col_bat && faxineiro->bateria_qtd < 3) {
+            faxineiro->bateria_qtd++;
+            bateria->ativo = false;
+            instanciar_texto_flutuante(textos, max_textos, faxineiro->x, player_top - 10.0f, "* bateria *");
+        }
+    }
+
+    if (kit_medico->ativo && kit_medico->sala == *sala_atual) {
+        bool col_kit = (player_right > kit_medico->x) && (player_left < kit_medico->x + kit_medico->w) &&
+                       (player_bottom > kit_medico->y) && (player_top < kit_medico->y + kit_medico->h);
+        if (col_kit) {
+            faxineiro->barra_vida = 100.0f;
+            kit_medico->ativo = false;
+            instanciar_texto_flutuante(textos, max_textos, faxineiro->x, player_top - 10.0f, "* kit medico *");
+        }
+    }
+
+    // Radiação se houver elemento radioativo na sala
+    if (*sala_atual == anomalia->sala_origem && tabela_periodica[anomalia->numero_atomico].radioativo) {
+        if (fabs(faxineiro->x - anomalia->x) <= anomalia->raio_visao) {
+            faxineiro->barra_radio += (10.0f / FPS);
+            if (faxineiro->barra_radio > 100.0f) faxineiro->barra_radio = 100.0f;
+        }
+    }
+
+    // Verificação de morte (barra_vida <= 0% ou barra_radio >= 100%)
+    if (faxineiro->barra_vida <= 0.0f || faxineiro->barra_radio >= 100.0f) {
+        faxineiro->barra_vida = 100.0f;
+        faxineiro->barra_radio = 0.0f;
+        faxineiro->barra_agua = 100.0f;
+        faxineiro->barra_bateria = 100.0f;
+        faxineiro->refil_agua_qtd = 0;
+        faxineiro->bateria_qtd = 0;
+        faxineiro->arma_slot_1 = ARMA_NENHUMA;
+        faxineiro->arma_slot_2 = ARMA_NENHUMA;
+        faxineiro->arma_equipada = ARMA_NENHUMA;
+        faxineiro->possui_mop = false;
+        faxineiro->possui_soprador = false;
+        faxineiro->possui_arma = false;
+        faxineiro->escalando = false;
+        soprador->ativo = false;
+        refil_agua->ativo = true;
+        bateria->ativo = true;
+        kit_medico->ativo = true;
+        *estado_fade = 1;
+        *proxima_sala = 0;
+        *proximo_x = 32.0f;
+        *proximo_chao_y = 127.0f;
+    }
 }

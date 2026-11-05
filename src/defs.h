@@ -59,6 +59,7 @@ enum Direcao { DIR_ESQUERDA = 0, DIR_DIREITA = 1 };
 enum TipoFrame { FRAME_IDLE = 0, FRAME_BRE = 1, FRAME_WALK1 = 2, FRAME_WALK2 = 3 };
 
 enum TipoProjetil { PROJETIL_AGUA, PROJETIL_FOGO, PROJETIL_NORMAL };
+enum TipoArma { ARMA_NENHUMA = -1, ARMA_MOP = 0, ARMA_SOPRADOR = 1 };
 
 typedef struct {
     float eixo_x;
@@ -97,7 +98,18 @@ typedef struct {
     int tempo_animacao;
 
     bool possui_arma;
+    bool possui_mop;
+    bool possui_soprador;
     bool escalando;
+    int arma_equipada;
+    int arma_slot_1;
+    int arma_slot_2;
+    float barra_vida;
+    float barra_radio;
+    float barra_agua;
+    float barra_bateria;
+    int refil_agua_qtd;
+    int bateria_qtd;
 } Jogador;
 
 typedef struct {
@@ -124,6 +136,26 @@ typedef struct {
     int tipo;
 } Porta;
 
+enum TipoElevador {
+    ELEVADOR_INDUSTRIAL = 0,
+    ELEVADOR_SOCIAL = 1
+};
+
+typedef struct {
+    float x, y;
+    float w, h;
+    int sala;
+    int tipo;
+} Elevador;
+
+typedef struct {
+    float x, y;
+    char texto[64];
+    float alpha;
+    int timer;
+    bool ativo;
+} TextoFlutuante;
+
 typedef struct {
     float x, y;
     float vel_y;
@@ -132,6 +164,19 @@ typedef struct {
     int sala_origem;
     ALLEGRO_BITMAP *sprite;
 } Item;
+
+typedef struct {
+    float x, y;
+    float w, h;
+    bool ativo;
+} Soprador;
+
+typedef struct {
+    float x, y;
+    float w, h;
+    int sala;
+    bool ativo;
+} Coletavel;
 
 typedef struct {
     float x, y;
@@ -175,6 +220,8 @@ typedef struct {
 
     float temperatura;
     bool recebendo_calor;
+    bool recebendo_calor_jogador;
+    bool recebendo_calor_soprador;
     int estado_atual;
     ALLEGRO_COLOR cor;
 

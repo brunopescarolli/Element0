@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "game.h"
 #include "player.h"
 #include "enemy.h"
@@ -26,6 +27,13 @@ bool game_init(Game *game) {
         sprintf(path, "assets/sprites/background/fundo_%d.png", i);
         game->sprites.backgrounds[i] = al_load_bitmap(path);
     }
+    game->sprites.bg_escadaria = al_load_bitmap("assets/sprites/background/escadaria.jpg");
+    if (!game->sprites.bg_escadaria) {
+        game->sprites.bg_escadaria = al_load_bitmap("../assets/sprites/background/escadaria.jpg");
+    }
+    if (!game->sprites.bg_escadaria) {
+        fprintf(stderr, "ERRO: Imagem 'assets/sprites/background/escadaria.jpg' nao foi encontrada!\n");
+    }
 
     game->sprites.sprite_porta_fechada = al_load_bitmap("assets/sprites/background/door_closed.png");
     game->sprites.sprite_porta_meio = al_load_bitmap("assets/sprites/background/door_open1.png");
@@ -40,14 +48,34 @@ bool game_init(Game *game) {
     game->sprites.sprite_escada_vertical = al_load_bitmap("assets/sprites/escada_vertical.png");
     game->sprites.sprite_prop1 = al_load_bitmap("assets/sprites/prop1.png");
 
-    game->faxineiro = (Jogador){
-        32.0, 127.0 - (52.0 / 2.0),
-        10.0, 4.0,
-        16.0, 52.0,
-        2.5, 0.0, true, DIR_DIREITA, 0,
-        {NULL, NULL, NULL, NULL},
-        false, 0, 0, false, false
-    };
+    game->faxineiro.x = 32.0;
+    game->faxineiro.y = 127.0 - (52.0 / 2.0);
+    game->faxineiro.w = 10.0;
+    game->faxineiro.h = 4.0;
+    game->faxineiro.body_w = 16.0;
+    game->faxineiro.body_h = 52.0;
+    game->faxineiro.velocidade = 2.5;
+    game->faxineiro.vel_y = 0.0;
+    game->faxineiro.no_chao = true;
+    game->faxineiro.direcao_atual = DIR_DIREITA;
+    game->faxineiro.frame_atual = 0;
+    for (int s = 0; s < 4; s++) game->faxineiro.sprites[s] = NULL;
+    game->faxineiro.esta_andando = false;
+    game->faxineiro.tempo_animacao = 0;
+    game->faxineiro.cooldown = 0;
+    game->faxineiro.possui_arma = false;
+    game->faxineiro.possui_mop = false;
+    game->faxineiro.possui_soprador = false;
+    game->faxineiro.escalando = false;
+    game->faxineiro.arma_equipada = ARMA_NENHUMA;
+    game->faxineiro.arma_slot_1 = ARMA_NENHUMA;
+    game->faxineiro.arma_slot_2 = ARMA_NENHUMA;
+    game->faxineiro.barra_vida = 100.0f;
+    game->faxineiro.barra_radio = 0.0f;
+    game->faxineiro.barra_agua = 100.0f;
+    game->faxineiro.barra_bateria = 100.0f;
+    game->faxineiro.refil_agua_qtd = 0;
+    game->faxineiro.bateria_qtd = 0;
 
     game->faxineiro.sprites[FRAME_IDLE]  = al_load_bitmap("assets/sprites/front_idle.png");
     game->faxineiro.sprites[FRAME_BRE]   = al_load_bitmap("assets/sprites/front_bre.png");
@@ -234,9 +262,38 @@ bool game_init(Game *game) {
     };
     for (int i = 0; i < TOTAL_ESCADAS; i++) game->mundo_escadas[i] = temp_escada[i];
 
+    Elevador temp_elevador[TOTAL_ELEVADORES] = {
+        // Sala 2: Hall 5 (Andar 5)
+        { 96, 150, 96, 104, 2, ELEVADOR_INDUSTRIAL },
+        { 224, 158, 56, 96, 2, ELEVADOR_SOCIAL },
+        // Sala 3: Hall 4 (Andar 4)
+        { 96, 150, 96, 104, 3, ELEVADOR_INDUSTRIAL },
+        { 224, 158, 56, 96, 3, ELEVADOR_SOCIAL },
+        // Sala 5: Hall 6 (Andar 6)
+        { 96, 150, 96, 104, 5, ELEVADOR_INDUSTRIAL },
+        { 224, 158, 56, 96, 5, ELEVADOR_SOCIAL },
+        // Sala 6: Hall 3 (Andar 3)
+        { 96, 150, 96, 104, 6, ELEVADOR_INDUSTRIAL },
+        { 224, 158, 56, 96, 6, ELEVADOR_SOCIAL },
+        // Sala 12: Hall 2 (Andar 2)
+        { 96, 150, 96, 104, 12, ELEVADOR_INDUSTRIAL },
+        { 224, 158, 56, 96, 12, ELEVADOR_SOCIAL },
+        // Sala 15: Hall 1 (Andar 1)
+        { 162, 150, 44, 104, 15, ELEVADOR_INDUSTRIAL },
+        { 276, 158, 38, 96, 15, ELEVADOR_SOCIAL }
+    };
+    for (int i = 0; i < TOTAL_ELEVADORES; i++) game->mundo_elevadores[i] = temp_elevador[i];
+    for (int i = 0; i < MAX_TEXTOS_FLUTUANTES; i++) game->textos_flutuantes[i].ativo = false;
+
     game->arma_mop = (Item){ 62.0, 127.0, 0.0, 30.0, true, 0, NULL };
     game->arma_mop.sprite = al_load_bitmap("assets/sprites/mop.png");
     game->sprites.sprite_water = al_load_bitmap("assets/sprites/water.png");
+
+    game->arma_soprador = (Item){ 80.0f, 127.0f, 0.0f, 30.0f, true, 0, NULL };
+    game->soprador = (Soprador){ 0.0f, 0.0f, 34.0f, 16.0f, false };
+    game->refil_agua = (Coletavel){ 100.0f, 115.0f, 12.0f, 12.0f, 0, true };
+    game->bateria = (Coletavel){ 120.0f, 115.0f, 12.0f, 12.0f, 0, true };
+    game->kit_medico = (Coletavel){ 140.0f, 115.0f, 12.0f, 12.0f, 0, true };
 
     game->anomalia = (Inimigo){
         100, 254.0 - (30.0 / 2.0), 40.0, 30.0,
@@ -244,7 +301,7 @@ bool game_init(Game *game) {
         1, 0.0,
         180.0,
         31,
-        TEMP_ESTACAO, false, SOLIDO, al_map_rgb(210, 210, 220),
+        TEMP_ESTACAO, false, false, false, SOLIDO, al_map_rgb(210, 210, 220),
         {NULL, NULL, NULL, NULL, NULL},
         {NULL, NULL, NULL, NULL, NULL},
         0, 0, 0,
@@ -315,12 +372,43 @@ void game_run(Game *game) {
                         game->faxineiro.x = 32.0;
                         game->faxineiro.y = 127.0 - (game->faxineiro.h / 2.0);
                         game->faxineiro.possui_arma = false;
+                        game->faxineiro.possui_mop = false;
+                        game->faxineiro.possui_soprador = false;
+                        game->faxineiro.arma_equipada = ARMA_NENHUMA;
+                        game->faxineiro.arma_slot_1 = ARMA_NENHUMA;
+                        game->faxineiro.arma_slot_2 = ARMA_NENHUMA;
+                        game->faxineiro.barra_vida = 100.0f;
+                        game->faxineiro.barra_radio = 0.0f;
+                        game->faxineiro.barra_agua = 100.0f;
+                        game->faxineiro.barra_bateria = 100.0f;
+                        game->faxineiro.refil_agua_qtd = 0;
+                        game->faxineiro.bateria_qtd = 0;
 
                         game->arma_mop.sala_origem = 0;
                         game->arma_mop.no_chao = true;
                         game->arma_mop.x = game->faxineiro.x + 30.0;
                         game->arma_mop.y = 127.0;
                         game->arma_mop.vel_y = 0;
+
+                        game->arma_soprador.sala_origem = 0;
+                        game->arma_soprador.no_chao = true;
+                        game->arma_soprador.x = 80.0f;
+                        game->arma_soprador.y = 127.0f;
+                        game->arma_soprador.vel_y = 0;
+
+                        game->soprador.ativo = false;
+                        game->refil_agua.ativo = true;
+                        game->refil_agua.sala = 0;
+                        game->refil_agua.x = 100.0f;
+                        game->refil_agua.y = 115.0f;
+                        game->bateria.ativo = true;
+                        game->bateria.sala = 0;
+                        game->bateria.x = 120.0f;
+                        game->bateria.y = 115.0f;
+                        game->kit_medico.ativo = true;
+                        game->kit_medico.sala = 0;
+                        game->kit_medico.x = 140.0f;
+                        game->kit_medico.y = 115.0f;
 
                         salvar_jogo(game->nome_jogador, game->sala_atual, game->faxineiro.x, game->faxineiro.y, game->faxineiro.possui_arma);
                         game->estado_jogo = ESTADO_JOGANDO;
@@ -370,7 +458,29 @@ void game_run(Game *game) {
                         if (f_chk) {
                             fclose(f_chk);
                             if (carregar_jogo(game->nome_jogador, &game->sala_atual, &game->faxineiro.x, &game->faxineiro.y, &game->faxineiro.possui_arma)) {
-                                if (game->faxineiro.possui_arma) game->arma_mop.no_chao = false;
+                                if (game->faxineiro.possui_arma) {
+                                    game->arma_mop.no_chao = false;
+                                    game->faxineiro.possui_mop = true;
+                                    game->faxineiro.arma_equipada = ARMA_MOP;
+                                    game->faxineiro.arma_slot_1 = ARMA_MOP;
+                                    game->faxineiro.arma_slot_2 = ARMA_NENHUMA;
+                                } else {
+                                    game->faxineiro.possui_mop = false;
+                                    game->faxineiro.arma_equipada = ARMA_NENHUMA;
+                                    game->faxineiro.arma_slot_1 = ARMA_NENHUMA;
+                                    game->faxineiro.arma_slot_2 = ARMA_NENHUMA;
+                                }
+                                game->faxineiro.possui_soprador = false;
+                                game->faxineiro.barra_vida = 100.0f;
+                                game->faxineiro.barra_radio = 0.0f;
+                                game->faxineiro.barra_agua = 100.0f;
+                                game->faxineiro.barra_bateria = 100.0f;
+                                game->faxineiro.refil_agua_qtd = 0;
+                                game->faxineiro.bateria_qtd = 0;
+                                game->soprador.ativo = false;
+                                game->refil_agua.ativo = true;
+                                game->bateria.ativo = true;
+                                game->kit_medico.ativo = true;
                                 game->estado_jogo = ESTADO_JOGANDO;
                             }
                         }
@@ -440,6 +550,16 @@ void game_run(Game *game) {
                     if (game->input.f3_pressionado) game->mostrar_hitbox = !game->mostrar_hitbox;
                 }
                 else if (evento.keyboard.keycode == ALLEGRO_KEY_S) game->input.acao_descer = true;
+                else if (evento.keyboard.keycode == ALLEGRO_KEY_1) {
+                    if (game->faxineiro.arma_slot_1 != ARMA_NENHUMA) {
+                        game->faxineiro.arma_equipada = game->faxineiro.arma_slot_1;
+                    }
+                }
+                else if (evento.keyboard.keycode == ALLEGRO_KEY_2) {
+                    if (game->faxineiro.arma_slot_2 != ARMA_NENHUMA) {
+                        game->faxineiro.arma_equipada = game->faxineiro.arma_slot_2;
+                    }
+                }
             }
             else if (game->estado_jogo == ESTADO_PAUSADO) {
                 if (evento.keyboard.keycode == ALLEGRO_KEY_ESCAPE || evento.keyboard.keycode == game->controles.tecla_pular) {
@@ -476,6 +596,22 @@ void game_run(Game *game) {
             }
         }
         else if (evento.type == ALLEGRO_EVENT_MOUSE_AXES) {
+            if (game->estado_jogo == ESTADO_JOGANDO && evento.mouse.dz != 0) {
+                if (game->faxineiro.arma_slot_1 != ARMA_NENHUMA && game->faxineiro.arma_slot_2 != ARMA_NENHUMA) {
+                    if (game->faxineiro.arma_equipada == game->faxineiro.arma_slot_1) {
+                        game->faxineiro.arma_equipada = game->faxineiro.arma_slot_2;
+                    } else {
+                        game->faxineiro.arma_equipada = game->faxineiro.arma_slot_1;
+                    }
+                } else if (game->faxineiro.arma_slot_1 != ARMA_NENHUMA) {
+                    game->faxineiro.arma_equipada = game->faxineiro.arma_slot_1;
+                } else if (game->faxineiro.arma_slot_2 != ARMA_NENHUMA) {
+                    game->faxineiro.arma_equipada = game->faxineiro.arma_slot_2;
+                } else {
+                    game->faxineiro.arma_equipada = ARMA_NENHUMA;
+                }
+            }
+
             float mapa_mouse_x = evento.mouse.x * ((float)LARGURA_MAPA / LARGURA_JANELA);
             float mapa_mouse_y = evento.mouse.y * ((float)ALTURA_MAPA / ALTURA_JANELA);
             bool sobre_elemento = false;
@@ -552,7 +688,29 @@ void game_run(Game *game) {
                             if (f_chk) {
                                 fclose(f_chk);
                                 if (carregar_jogo(game->nome_jogador, &game->sala_atual, &game->faxineiro.x, &game->faxineiro.y, &game->faxineiro.possui_arma)) {
-                                    if (game->faxineiro.possui_arma) game->arma_mop.no_chao = false;
+                                    if (game->faxineiro.possui_arma) {
+                                        game->arma_mop.no_chao = false;
+                                        game->faxineiro.possui_mop = true;
+                                        game->faxineiro.arma_equipada = ARMA_MOP;
+                                        game->faxineiro.arma_slot_1 = ARMA_MOP;
+                                        game->faxineiro.arma_slot_2 = ARMA_NENHUMA;
+                                    } else {
+                                        game->faxineiro.possui_mop = false;
+                                        game->faxineiro.arma_equipada = ARMA_NENHUMA;
+                                        game->faxineiro.arma_slot_1 = ARMA_NENHUMA;
+                                        game->faxineiro.arma_slot_2 = ARMA_NENHUMA;
+                                    }
+                                    game->faxineiro.possui_soprador = false;
+                                    game->faxineiro.barra_vida = 100.0f;
+                                    game->faxineiro.barra_radio = 0.0f;
+                                    game->faxineiro.barra_agua = 100.0f;
+                                    game->faxineiro.barra_bateria = 100.0f;
+                                    game->faxineiro.refil_agua_qtd = 0;
+                                    game->faxineiro.bateria_qtd = 0;
+                                    game->soprador.ativo = false;
+                                    game->refil_agua.ativo = true;
+                                    game->bateria.ativo = true;
+                                    game->kit_medico.ativo = true;
                                     game->estado_jogo = ESTADO_JOGANDO;
                                 }
                             }
@@ -623,6 +781,8 @@ void game_run(Game *game) {
 
             if (game->estado_jogo == ESTADO_JOGANDO) {
                 game->anomalia.recebendo_calor = false;
+                game->anomalia.recebendo_calor_jogador = false;
+                game->anomalia.recebendo_calor_soprador = false;
 
                 if (game->sala_atual == 1) {
                     float player_left = game->faxineiro.x - game->faxineiro.w / 2.0;
@@ -656,6 +816,7 @@ void game_run(Game *game) {
                         game->faxineiro.vel_y = 0;
                         game->faxineiro.no_chao = true;
                         game->faxineiro.escalando = false;
+                        for (int t = 0; t < MAX_TEXTOS_FLUTUANTES; t++) game->textos_flutuantes[t].ativo = false;
                         salvar_jogo(game->nome_jogador, game->sala_atual, game->faxineiro.x, game->faxineiro.y, game->faxineiro.possui_arma);
                     }
                     if (game->timer_fade >= 60) game->estado_fade = 3;
@@ -679,10 +840,77 @@ void game_run(Game *game) {
                     }
                 }
 
-                atualizar_jogador(&game->faxineiro, &game->input, &game->arma_mop, &game->anomalia,
-                                  game->mundo_plataformas, TOTAL_PLATAFORMAS, game->mundo_escadas, TOTAL_ESCADAS,
-                                  game->mundo_portas, TOTAL_PORTAS, game->projeteis, MAX_PROJETEIS,
+                if (game->arma_soprador.no_chao && game->arma_soprador.sala_origem == game->sala_atual) {
+                    game->arma_soprador.vel_y += GRAVIDADE;
+                    game->arma_soprador.y += game->arma_soprador.vel_y;
+                    float largura_sop_sprite = game->arma_soprador.sprite ? al_get_bitmap_width(game->arma_soprador.sprite) : 14.0f;
+                    for (int p = 0; p < TOTAL_PLATAFORMAS; p++) {
+                        if (game->mundo_plataformas[p].sala != game->sala_atual) continue;
+                        Plataforma plat = game->mundo_plataformas[p];
+                        if ((game->arma_soprador.x + largura_sop_sprite / 2 > plat.x) && (game->arma_soprador.x - largura_sop_sprite / 2 < plat.x + plat.w) &&
+                            (game->arma_soprador.y >= plat.y) && (game->arma_soprador.y - game->arma_soprador.vel_y <= plat.y + 5.0)) {
+                            game->arma_soprador.y = plat.y; game->arma_soprador.vel_y = 0; break;
+                        }
+                    }
+                }
+
+                atualizar_jogador(&game->faxineiro, &game->input, &game->arma_mop, &game->arma_soprador,
+                                  &game->soprador, &game->refil_agua, &game->bateria, &game->kit_medico,
+                                  &game->anomalia, game->mundo_plataformas, TOTAL_PLATAFORMAS,
+                                  game->mundo_escadas, TOTAL_ESCADAS, game->mundo_portas, TOTAL_PORTAS,
+                                  game->projeteis, MAX_PROJETEIS, game->textos_flutuantes, MAX_TEXTOS_FLUTUANTES,
                                   &game->sala_atual, &game->estado_fade, &game->proxima_sala, &game->proximo_x, &game->proximo_chao_y);
+
+                if (game->estado_fade == 0 && game->input.acao_entrar && !game->faxineiro.escalando) {
+                    float player_left = game->faxineiro.x - game->faxineiro.body_w / 2.0f;
+                    float player_right = game->faxineiro.x + game->faxineiro.body_w / 2.0f;
+                    float player_top = (game->faxineiro.y + game->faxineiro.h / 2.0f) - game->faxineiro.body_h;
+                    float player_bottom = game->faxineiro.y + game->faxineiro.h / 2.0f;
+
+                    for (int e = 0; e < TOTAL_ELEVADORES; e++) {
+                        Elevador elev = game->mundo_elevadores[e];
+                        if (elev.sala != game->sala_atual) continue;
+
+                        bool colide_elev = (player_right > elev.x) && (player_left < elev.x + elev.w) &&
+                                           (player_bottom > elev.y) && (player_top < elev.y + elev.h);
+                        if (colide_elev) {
+                            bool ja_existe_ativo = false;
+                            for (int t = 0; t < MAX_TEXTOS_FLUTUANTES; t++) {
+                                if (game->textos_flutuantes[t].ativo) {
+                                    ja_existe_ativo = true;
+                                    break;
+                                }
+                            }
+
+                            if (!ja_existe_ativo) {
+                                for (int t = 0; t < MAX_TEXTOS_FLUTUANTES; t++) {
+                                    if (!game->textos_flutuantes[t].ativo) {
+                                        game->textos_flutuantes[t].x = game->faxineiro.x;
+                                        game->textos_flutuantes[t].y = player_top - 10.0f;
+                                        strcpy(game->textos_flutuantes[t].texto, "* sem energia *");
+                                        game->textos_flutuantes[t].alpha = 255.0f;
+                                        game->textos_flutuantes[t].timer = 60;
+                                        game->textos_flutuantes[t].ativo = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            game->input.acao_entrar = false;
+                            break;
+                        }
+                    }
+                }
+
+                for (int t = 0; t < MAX_TEXTOS_FLUTUANTES; t++) {
+                    if (!game->textos_flutuantes[t].ativo) continue;
+                    game->textos_flutuantes[t].y -= 0.4f;
+                    game->textos_flutuantes[t].timer--;
+                    game->textos_flutuantes[t].alpha = (255.0f * (float)game->textos_flutuantes[t].timer) / 60.0f;
+                    if (game->textos_flutuantes[t].timer <= 0 || game->textos_flutuantes[t].alpha <= 0.0f) {
+                        game->textos_flutuantes[t].alpha = 0.0f;
+                        game->textos_flutuantes[t].ativo = false;
+                    }
+                }
 
                 atualizar_inimigo(&game->anomalia, &game->faxineiro,
                                   game->mundo_plataformas, TOTAL_PLATAFORMAS, game->mundo_escadas, TOTAL_ESCADAS,
@@ -708,9 +936,11 @@ void game_run(Game *game) {
             }
             else if (game->estado_jogo == ESTADO_JOGANDO || game->estado_jogo == ESTADO_PAUSADO) {
                 al_use_transform(&camera_jogo);
-                desenhar_mundo(game->sala_atual, &game->faxineiro, &game->anomalia, &game->arma_mop,
+                desenhar_mundo(game->sala_atual, &game->faxineiro, &game->anomalia, &game->arma_mop, &game->arma_soprador,
+                               &game->soprador, &game->refil_agua, &game->bateria, &game->kit_medico,
                                game->projeteis, MAX_PROJETEIS, game->mundo_plataformas, TOTAL_PLATAFORMAS,
                                game->mundo_escadas, TOTAL_ESCADAS, game->mundo_portas, TOTAL_PORTAS,
+                               game->mundo_elevadores, TOTAL_ELEVADORES, game->textos_flutuantes, MAX_TEXTOS_FLUTUANTES,
                                &game->sprites, game->prop_na_frente, game->estado_fade, game->alpha_fade,
                                game->mostrar_hitbox, game->fonte, largura_camera, altura_camera);
 
@@ -749,7 +979,9 @@ void game_cleanup(Game *game) {
     for (int i = 0; i < MAX_SALAS; i++) {
         if (game->sprites.backgrounds[i]) al_destroy_bitmap(game->sprites.backgrounds[i]);
     }
+    if (game->sprites.bg_escadaria) al_destroy_bitmap(game->sprites.bg_escadaria);
     if (game->arma_mop.sprite) al_destroy_bitmap(game->arma_mop.sprite);
+    if (game->arma_soprador.sprite) al_destroy_bitmap(game->arma_soprador.sprite);
     if (game->sprites.sprite_water) al_destroy_bitmap(game->sprites.sprite_water);
     if (game->fonte) al_destroy_font(game->fonte);
     if (game->timer) al_destroy_timer(game->timer);

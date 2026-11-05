@@ -5,6 +5,7 @@
 
 typedef struct {
     ALLEGRO_BITMAP *backgrounds[MAX_SALAS];
+    ALLEGRO_BITMAP *bg_escadaria;
     ALLEGRO_BITMAP *sprite_porta_fechada;
     ALLEGRO_BITMAP *sprite_porta_meio;
     ALLEGRO_BITMAP *sprite_porta_aberta;
@@ -18,9 +19,11 @@ typedef struct {
     ALLEGRO_BITMAP *sprite_water;
 } GameSprites;
 
-void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item *arma_mop,
+void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item *arma_mop, Item *arma_soprador,
+                    Soprador *soprador, Coletavel *refil_agua, Coletavel *bateria, Coletavel *kit_medico,
                     Projetil *projeteis, int max_proj, Plataforma *plataformas, int total_plat,
                     Escada *escadas, int total_escadas, Porta *portas, int total_portas,
+                    Elevador *elevadores, int total_elevadores, TextoFlutuante *textos, int max_textos,
                     GameSprites *sprites, bool prop_na_frente, int estado_fade, int alpha_fade,
                     bool mostrar_hitbox, ALLEGRO_FONT *fonte, float largura_camera, float altura_camera);
 

@@ -7,6 +7,8 @@
 #define TOTAL_PLATAFORMAS 35
 #define TOTAL_PORTAS 62
 #define TOTAL_ESCADAS 8
+#define TOTAL_ELEVADORES 12
+#define MAX_TEXTOS_FLUTUANTES 8
 
 typedef struct {
     ALLEGRO_DISPLAY *tela;
@@ -40,12 +42,19 @@ typedef struct {
     Input input;
     Jogador faxineiro;
     Item arma_mop;
+    Item arma_soprador;
+    Soprador soprador;
+    Coletavel refil_agua;
+    Coletavel bateria;
+    Coletavel kit_medico;
     Inimigo anomalia;
     Projetil projeteis[MAX_PROJETEIS];
 
     Plataforma mundo_plataformas[TOTAL_PLATAFORMAS];
     Porta mundo_portas[TOTAL_PORTAS];
     Escada mundo_escadas[TOTAL_ESCADAS];
+    Elevador mundo_elevadores[TOTAL_ELEVADORES];
+    TextoFlutuante textos_flutuantes[MAX_TEXTOS_FLUTUANTES];
 
     GameSprites sprites;
 } Game;

@@ -39,19 +39,75 @@ static const char *obter_nome_sala(int sala) {
     return "Desconhecida";
 }
 
-void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item *arma_mop,
+void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item *arma_mop, Item *arma_soprador,
+                    Soprador *soprador, Coletavel *refil_agua, Coletavel *bateria, Coletavel *kit_medico,
                     Projetil *projeteis, int max_proj, Plataforma *plataformas, int total_plat,
                     Escada *escadas, int total_escadas, Porta *portas, int total_portas,
+                    Elevador *elevadores, int total_elevadores, TextoFlutuante *textos, int max_textos,
                     GameSprites *sprites, bool prop_na_frente, int estado_fade, int alpha_fade,
                     bool mostrar_hitbox, ALLEGRO_FONT *fonte, float largura_camera, float altura_camera) {
 
-    ALLEGRO_BITMAP *bg_ativo = sprites->backgrounds[sala_atual];
-    if (!bg_ativo && (sala_atual == 3 || sala_atual == 5 || sala_atual == 6 || sala_atual == 12 || sala_atual == 15)) {
-        bg_ativo = sprites->backgrounds[2];
+    bool eh_escadaria = (sala_atual >= 26 && sala_atual <= 31);
+    al_draw_filled_rectangle(0.0f, 0.0f, largura_camera, altura_camera, al_map_rgb(30, 30, 30));
+
+    if (eh_escadaria) {
+        if (sprites->bg_escadaria != NULL) {
+            float sw = al_get_bitmap_width(sprites->bg_escadaria);
+            float sh = al_get_bitmap_height(sprites->bg_escadaria);
+            al_draw_scaled_bitmap(sprites->bg_escadaria, 0.0f, 0.0f, sw, sh, 0.0f, 0.0f, largura_camera, altura_camera, 0);
+        }
+    } else {
+        ALLEGRO_BITMAP *bg_ativo = sprites->backgrounds[sala_atual];
+        if (!bg_ativo && (sala_atual == 3 || sala_atual == 5 || sala_atual == 6 || sala_atual == 12 || sala_atual == 15)) {
+            bg_ativo = sprites->backgrounds[2];
+        }
+        if (bg_ativo != NULL) {
+            float sw = al_get_bitmap_width(bg_ativo);
+            float sh = al_get_bitmap_height(bg_ativo);
+            al_draw_scaled_bitmap(bg_ativo, 0.0f, 0.0f, sw, sh, 0.0f, 0.0f, largura_camera, altura_camera, 0);
+        }
     }
-    if (bg_ativo) {
-        float sw = al_get_bitmap_width(bg_ativo); float sh = al_get_bitmap_height(bg_ativo);
-        al_draw_scaled_bitmap(bg_ativo, 0, 0, sw, sh, 0, 0, largura_camera, altura_camera, 0);
+
+    if (eh_escadaria && fonte) {
+        int andar_atual = sala_atual - 25;
+        float porta_x = 416.0f;
+        float porta_y = 84.0f;
+        for (int p = 0; p < total_portas; p++) {
+            if (portas[p].sala_origem == sala_atual && portas[p].tipo != 2) {
+                porta_x = portas[p].x;
+                porta_y = portas[p].y;
+                break;
+            }
+        }
+
+        float texto_x = porta_x - 90.0f;
+        float texto_y = porta_y + 22.0f;
+        float escala_texto = 3.5f;
+
+        ALLEGRO_TRANSFORM transform_anterior = *al_get_current_transform();
+        ALLEGRO_TRANSFORM transform_texto;
+        al_build_transform(&transform_texto, texto_x, texto_y, escala_texto, escala_texto, 0.0f);
+        al_compose_transform(&transform_texto, &transform_anterior);
+        al_use_transform(&transform_texto);
+
+        al_draw_textf(fonte, al_map_rgba(210, 220, 230, 190), 0.0f, 0.0f, ALLEGRO_ALIGN_CENTRE, "%02d", andar_atual);
+
+        al_use_transform(&transform_anterior);
+    }
+
+    for (int e = 0; e < total_elevadores; e++) {
+        if (elevadores[e].sala != sala_atual) continue;
+        Elevador elev = elevadores[e];
+        ALLEGRO_COLOR cor_preenchimento = (elev.tipo == ELEVADOR_INDUSTRIAL)
+            ? al_map_rgb(38, 32, 30)
+            : al_map_rgb(24, 32, 44);
+        ALLEGRO_COLOR cor_borda_elev = (elev.tipo == ELEVADOR_INDUSTRIAL)
+            ? al_map_rgb(18, 15, 14)
+            : al_map_rgb(14, 18, 26);
+
+        al_draw_filled_rectangle(elev.x, elev.y, elev.x + elev.w, elev.y + elev.h, cor_preenchimento);
+        al_draw_rectangle(elev.x, elev.y, elev.x + elev.w, elev.y + elev.h, cor_borda_elev, 2.0);
+        al_draw_line(elev.x + elev.w / 2.0f, elev.y, elev.x + elev.w / 2.0f, elev.y + elev.h, cor_borda_elev, 1.0);
     }
 
     ALLEGRO_COLOR cor_porta = al_map_rgb(40, 50, 60);
@@ -87,6 +143,7 @@ void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item 
     ALLEGRO_COLOR cor_borda = al_map_rgb(80, 120, 100);
     for (int p = 0; p < total_plat; p++) {
         if (plataformas[p].sala != sala_atual) continue;
+        if (eh_escadaria && sprites->bg_escadaria) continue;
         Plataforma plat = plataformas[p];
 
         if (sprites->sprite_chao) {
@@ -117,7 +174,7 @@ void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item 
                     float draw_h = (ty + sh > esc.h) ? (esc.h - ty) : sh;
                     al_draw_scaled_bitmap(sprites->sprite_escada_vertical, 0, 0, sw, draw_h, esc.x, esc.y + ty, esc.w, draw_h, 0);
                 }
-            } else {
+            } else if (!eh_escadaria || !sprites->bg_escadaria) {
                 ALLEGRO_COLOR cor_aste = al_map_rgb(130, 145, 160);
                 ALLEGRO_COLOR cor_degrau = al_map_rgb(185, 200, 215);
                 al_draw_filled_rectangle(esc.x, esc.y, esc.x + 3.0, esc.y + esc.h, cor_aste);
@@ -160,9 +217,35 @@ void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item 
         }
     }
 
-    if (arma_mop->no_chao && arma_mop->sala_origem == sala_atual && arma_mop->sprite) {
+    if (arma_mop && arma_mop->no_chao && arma_mop->sala_origem == sala_atual && arma_mop->sprite) {
         float larg_mop = al_get_bitmap_width(arma_mop->sprite); float alt_mop = al_get_bitmap_height(arma_mop->sprite);
         al_draw_bitmap(arma_mop->sprite, arma_mop->x - (larg_mop / 2), arma_mop->y - alt_mop, 0);
+    }
+
+    if (arma_soprador && arma_soprador->no_chao && arma_soprador->sala_origem == sala_atual) {
+        al_draw_filled_rectangle(arma_soprador->x - 7.0f, arma_soprador->y - 8.0f, arma_soprador->x + 5.0f, arma_soprador->y - 2.0f, al_map_rgb(220, 100, 20));
+        al_draw_filled_rectangle(arma_soprador->x + 5.0f, arma_soprador->y - 7.0f, arma_soprador->x + 9.0f, arma_soprador->y - 3.0f, al_map_rgb(180, 180, 180));
+        al_draw_filled_rectangle(arma_soprador->x - 5.0f, arma_soprador->y - 2.0f, arma_soprador->x - 2.0f, arma_soprador->y, al_map_rgb(50, 50, 50));
+        al_draw_rectangle(arma_soprador->x - 7.0f, arma_soprador->y - 8.0f, arma_soprador->x + 5.0f, arma_soprador->y - 2.0f, al_map_rgb(40, 40, 40), 1.0f);
+    }
+
+    if (refil_agua && refil_agua->ativo && refil_agua->sala == sala_atual) {
+        al_draw_filled_rectangle(refil_agua->x, refil_agua->y, refil_agua->x + refil_agua->w, refil_agua->y + refil_agua->h, al_map_rgb(60, 160, 255));
+        al_draw_rectangle(refil_agua->x, refil_agua->y, refil_agua->x + refil_agua->w, refil_agua->y + refil_agua->h, al_map_rgb(255, 255, 255), 1.0f);
+    }
+
+    if (bateria && bateria->ativo && bateria->sala == sala_atual) {
+        al_draw_filled_rectangle(bateria->x, bateria->y, bateria->x + bateria->w, bateria->y + bateria->h, al_map_rgb(255, 220, 50));
+        al_draw_rectangle(bateria->x, bateria->y, bateria->x + bateria->w, bateria->y + bateria->h, al_map_rgb(255, 255, 255), 1.0f);
+    }
+
+    if (kit_medico && kit_medico->ativo && kit_medico->sala == sala_atual) {
+        al_draw_filled_rectangle(kit_medico->x, kit_medico->y, kit_medico->x + kit_medico->w, kit_medico->y + kit_medico->h, al_map_rgb(240, 240, 240));
+        al_draw_rectangle(kit_medico->x, kit_medico->y, kit_medico->x + kit_medico->w, kit_medico->y + kit_medico->h, al_map_rgb(60, 60, 60), 1.0f);
+        float cx = kit_medico->x + kit_medico->w / 2.0f;
+        float cy = kit_medico->y + kit_medico->h / 2.0f;
+        al_draw_filled_rectangle(cx - 1.0f, cy - 4.0f, cx + 1.0f, cy + 4.0f, al_map_rgb(220, 30, 30));
+        al_draw_filled_rectangle(cx - 4.0f, cy - 1.0f, cx + 4.0f, cy + 1.0f, al_map_rgb(220, 30, 30));
     }
 
     for (int i = 0; i < max_proj; i++) {
@@ -191,6 +274,31 @@ void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item 
 
     int flag_espelhamento = (faxineiro->direcao_atual == DIR_ESQUERDA) ? ALLEGRO_FLIP_HORIZONTAL : 0;
 
+    // Arma NÃO equipada: desenhada nas costas em posição vertical (atrás do corpo)
+    // Deslocada para CIMA em 50% da altura do sprite/placeholder da arma
+    float costas_x = (faxineiro->direcao_atual == DIR_DIREITA) ? (faxineiro->x - 5.0f) : (faxineiro->x + 5.0f);
+    float costas_y = faxineiro->y - (faxineiro->body_h / 4.0f);
+
+    if (faxineiro->arma_equipada == ARMA_MOP && faxineiro->possui_soprador) {
+        // Soprador Térmico nas costas (vertical, deslocado 50% para cima: altura 16 -> sobe 8px)
+        float sop_y = costas_y - 8.0f;
+        al_draw_filled_rectangle(costas_x - 3.0f, sop_y - 8.0f, costas_x + 3.0f, sop_y + 8.0f, al_map_rgb(220, 100, 20));
+        al_draw_filled_rectangle(costas_x - 2.0f, sop_y - 12.0f, costas_x + 2.0f, sop_y - 8.0f, al_map_rgb(170, 170, 170));
+        al_draw_rectangle(costas_x - 3.0f, sop_y - 8.0f, costas_x + 3.0f, sop_y + 8.0f, al_map_rgb(40, 40, 40), 1.0f);
+    } else if (faxineiro->arma_equipada == ARMA_SOPRADOR && faxineiro->possui_mop) {
+        // Mop nas costas (vertical, deslocado 50% para cima)
+        if (arma_mop && arma_mop->sprite) {
+            float larg_mop = al_get_bitmap_width(arma_mop->sprite);
+            float alt_mop = al_get_bitmap_height(arma_mop->sprite);
+            float mop_y = costas_y - (alt_mop * 0.5f);
+            al_draw_bitmap(arma_mop->sprite, costas_x - (larg_mop / 2.0f), mop_y - (alt_mop / 2.0f), flag_espelhamento);
+        } else {
+            float alt_mop = 28.0f;
+            float mop_y = costas_y - (alt_mop * 0.5f);
+            al_draw_filled_rectangle(costas_x - 2.0f, mop_y - 14.0f, costas_x + 2.0f, mop_y + 14.0f, al_map_rgb(180, 180, 180));
+        }
+    }
+
     if (tem_sprites) {
         ALLEGRO_BITMAP *sprite_final = faxineiro->sprites[tipo_frame_desenhar];
         if (sprite_final != NULL) {
@@ -200,15 +308,37 @@ void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item 
         }
     }
 
-    if (faxineiro->possui_arma && arma_mop->sprite) {
-        float mao_x = faxineiro->x; float mao_y = faxineiro->y - (faxineiro->body_h / 2.0) + 4;
-        if (tipo_frame_desenhar == FRAME_BRE) mao_y += 1; else if (tipo_frame_desenhar == FRAME_WALK1) mao_y -= 2;
+    // Arma EQUIPADA: desenhada na mão do personagem (independentemente de possuir o Mop ou não)
+    float mao_y = faxineiro->y - (faxineiro->body_h / 2.0) + 4;
+    if (tipo_frame_desenhar == FRAME_BRE) mao_y += 1; else if (tipo_frame_desenhar == FRAME_WALK1) mao_y -= 2;
 
-        if (faxineiro->direcao_atual == DIR_DIREITA) mao_x -= 6; else mao_x += 6;
+    float offset_arma_x = (faxineiro->direcao_atual == DIR_DIREITA) ? 7.0f : -7.0f;
 
+    if (faxineiro->arma_equipada == ARMA_MOP && faxineiro->possui_mop && arma_mop && arma_mop->sprite) {
+        float mao_x = ((faxineiro->direcao_atual == DIR_DIREITA) ? (faxineiro->x - 6.0f) : (faxineiro->x + 6.0f)) + offset_arma_x;
         float larg_mop = al_get_bitmap_width(arma_mop->sprite); float alt_mop = al_get_bitmap_height(arma_mop->sprite);
         float angulo_rotacao = (faxineiro->direcao_atual == DIR_DIREITA) ? (-ALLEGRO_PI / 2.0) : (ALLEGRO_PI / 2.0);
         al_draw_rotated_bitmap(arma_mop->sprite, larg_mop / 2.0, alt_mop / 2.0, mao_x, mao_y, angulo_rotacao, flag_espelhamento);
+    } else if (faxineiro->arma_equipada == ARMA_SOPRADOR && faxineiro->possui_soprador) {
+        float hand_x = ((faxineiro->direcao_atual == DIR_DIREITA) ? (faxineiro->x + 6.0f) : (faxineiro->x - 6.0f)) + offset_arma_x;
+        if (faxineiro->direcao_atual == DIR_DIREITA) {
+            al_draw_filled_rectangle(hand_x - 2.0f, mao_y - 3.0f, hand_x + 10.0f, mao_y + 3.0f, al_map_rgb(220, 100, 20));
+            al_draw_filled_rectangle(hand_x + 10.0f, mao_y - 2.0f, hand_x + 14.0f, mao_y + 2.0f, al_map_rgb(180, 180, 180));
+            al_draw_filled_rectangle(hand_x, mao_y + 3.0f, hand_x + 3.0f, mao_y + 7.0f, al_map_rgb(50, 50, 50));
+            al_draw_rectangle(hand_x - 2.0f, mao_y - 3.0f, hand_x + 10.0f, mao_y + 3.0f, al_map_rgb(40, 40, 40), 1.0f);
+        } else {
+            al_draw_filled_rectangle(hand_x - 10.0f, mao_y - 3.0f, hand_x + 2.0f, mao_y + 3.0f, al_map_rgb(220, 100, 20));
+            al_draw_filled_rectangle(hand_x - 14.0f, mao_y - 2.0f, hand_x - 10.0f, mao_y + 2.0f, al_map_rgb(180, 180, 180));
+            al_draw_filled_rectangle(hand_x - 3.0f, mao_y + 3.0f, hand_x, mao_y + 7.0f, al_map_rgb(50, 50, 50));
+            al_draw_rectangle(hand_x - 10.0f, mao_y - 3.0f, hand_x + 2.0f, mao_y + 3.0f, al_map_rgb(40, 40, 40), 1.0f);
+        }
+
+        // Hitbox de chamas (placeholder) de curto alcance
+        if (soprador && soprador->ativo) {
+            al_draw_filled_rectangle(soprador->x, soprador->y, soprador->x + soprador->w, soprador->y + soprador->h, al_map_rgba(255, 120, 0, 160));
+            al_draw_filled_rectangle(soprador->x + 2.0f, soprador->y + 2.0f, soprador->x + soprador->w - 2.0f, soprador->y + soprador->h - 2.0f, al_map_rgba(255, 230, 40, 200));
+            al_draw_rectangle(soprador->x, soprador->y, soprador->x + soprador->w, soprador->y + soprador->h, al_map_rgb(255, 80, 0), 1.0f);
+        }
     }
 
     if (sala_atual == 1 && prop_na_frente) {
@@ -221,12 +351,33 @@ void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item 
         }
     }
 
-    if (estado_fade > 0) al_draw_filled_rectangle(0, 0, largura_camera, altura_camera, al_map_rgba(0, 0, 0, alpha_fade));
+    for (int t = 0; t < max_textos; t++) {
+        if (!textos[t].ativo) continue;
+        unsigned char opacidade = (unsigned char)textos[t].alpha;
+        al_draw_text(fonte, al_map_rgba(255, 255, 255, opacidade), textos[t].x, textos[t].y, ALLEGRO_ALIGN_CENTRE, textos[t].texto);
+    }
 
     if (mostrar_hitbox && estado_fade == 0) {
         al_draw_rectangle(faxineiro->x - faxineiro->w / 2, faxineiro->y - faxineiro->h / 2, faxineiro->x + faxineiro->w / 2, faxineiro->y + faxineiro->h / 2, al_map_rgb(0, 255, 0), 1.0);
         float body_top = (faxineiro->y + faxineiro->h / 2) - faxineiro->body_h;
         al_draw_rectangle(faxineiro->x - faxineiro->body_w / 2, body_top, faxineiro->x + faxineiro->body_w / 2, faxineiro->y + faxineiro->h / 2, al_map_rgb(0, 255, 255), 1.0);
+
+        if (refil_agua && refil_agua->ativo && refil_agua->sala == sala_atual) {
+            al_draw_rectangle(refil_agua->x, refil_agua->y, refil_agua->x + refil_agua->w, refil_agua->y + refil_agua->h, al_map_rgb(60, 160, 255), 1.0f);
+            al_draw_text(fonte, al_map_rgb(100, 200, 255), refil_agua->x + refil_agua->w / 2.0f, refil_agua->y - 10, ALLEGRO_ALIGN_CENTRE, "Refil Agua");
+        }
+        if (bateria && bateria->ativo && bateria->sala == sala_atual) {
+            al_draw_rectangle(bateria->x, bateria->y, bateria->x + bateria->w, bateria->y + bateria->h, al_map_rgb(255, 220, 50), 1.0f);
+            al_draw_text(fonte, al_map_rgb(255, 220, 50), bateria->x + bateria->w / 2.0f, bateria->y - 10, ALLEGRO_ALIGN_CENTRE, "Bateria");
+        }
+        if (kit_medico && kit_medico->ativo && kit_medico->sala == sala_atual) {
+            al_draw_rectangle(kit_medico->x, kit_medico->y, kit_medico->x + kit_medico->w, kit_medico->y + kit_medico->h, al_map_rgb(255, 100, 100), 1.0f);
+            al_draw_text(fonte, al_map_rgb(255, 100, 100), kit_medico->x + kit_medico->w / 2.0f, kit_medico->y - 10, ALLEGRO_ALIGN_CENTRE, "Kit Medico");
+        }
+        if (arma_soprador && arma_soprador->no_chao && arma_soprador->sala_origem == sala_atual) {
+            al_draw_rectangle(arma_soprador->x - 7.0f, arma_soprador->y - 8.0f, arma_soprador->x + 9.0f, arma_soprador->y, al_map_rgb(255, 150, 50), 1.0f);
+            al_draw_text(fonte, al_map_rgb(255, 150, 50), arma_soprador->x + 1.0f, arma_soprador->y - 18, ALLEGRO_ALIGN_CENTRE, "Soprador");
+        }
 
         for (int e = 0; e < total_escadas; e++) {
             if (escadas[e].sala != sala_atual) continue;
@@ -253,12 +404,14 @@ void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item 
                 al_draw_textf(fonte, al_map_rgb(255, 220, 100), tx, ty, align, "[%d]", porta.destino_sala);
             }
             if (porta.jogador_perto) {
-                al_draw_textf(fonte, al_map_rgb(255, 220, 100), 10, 34, ALLEGRO_ALIGN_LEFT, "Porta -> Sala %d: %s", porta.destino_sala, obter_nome_sala(porta.destino_sala));
+                // Deslocado para Y=84 para não sobrepor o HUD
+                al_draw_textf(fonte, al_map_rgb(255, 220, 100), 10, 84, ALLEGRO_ALIGN_LEFT, "Porta -> Sala %d: %s", porta.destino_sala, obter_nome_sala(porta.destino_sala));
             }
         }
 
         al_draw_text(fonte, al_map_rgb(255, 255, 0), largura_camera / 2.0, 10, ALLEGRO_ALIGN_CENTRE, "DEBUG MODE");
-        al_draw_textf(fonte, al_map_rgb(0, 255, 100), 10, 22, ALLEGRO_ALIGN_LEFT, "Sala %d: %s", sala_atual, obter_nome_sala(sala_atual));
+        // Deslocado para Y=72 para não sobrepor o HUD de status
+        al_draw_textf(fonte, al_map_rgb(0, 255, 100), 10, 72, ALLEGRO_ALIGN_LEFT, "Sala %d: %s", sala_atual, obter_nome_sala(sala_atual));
         al_draw_textf(fonte, al_map_rgb(0, 255, 255), largura_camera - 10, 10, ALLEGRO_ALIGN_RIGHT, "Ambiente: %.1f C", TEMP_ESTACAO);
         al_draw_textf(fonte, al_map_rgb(255, 150, 150), faxineiro->x, faxineiro->y - faxineiro->h / 2 - 15, ALLEGRO_ALIGN_CENTRE, "%.1f C", TEMP_JOGADOR);
 
@@ -266,6 +419,78 @@ void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item 
             al_draw_textf(fonte, al_map_rgb(255, 150, 150), anomalia->x, anomalia->y - anomalia->h / 2 - 15, ALLEGRO_ALIGN_CENTRE, "%.1f C", anomalia->temperatura);
         }
     }
+
+    // Transformação para UI em coordenadas de tela fixas (480x270)
+    ALLEGRO_TRANSFORM camera_ui;
+    al_identity_transform(&camera_ui);
+    al_scale_transform(&camera_ui, (float)LARGURA_JANELA / LARGURA_MAPA, (float)ALTURA_JANELA / ALTURA_MAPA);
+    al_use_transform(&camera_ui);
+
+    // --- HUD Superior Esquerdo: Status do Jogador ---
+    // Barra de Vida (começa cheia, esvazia ao tomar dano)
+    al_draw_text(fonte, al_map_rgb(200, 255, 200), 10, 10, ALLEGRO_ALIGN_LEFT, "VIDA");
+    al_draw_filled_rectangle(45, 10, 45 + 70, 10 + 7, al_map_rgb(35, 35, 35));
+    float pct_vida = faxineiro->barra_vida / 100.0f;
+    if (pct_vida < 0.0f) pct_vida = 0.0f;
+    if (pct_vida > 1.0f) pct_vida = 1.0f;
+    al_draw_filled_rectangle(45, 10, 45 + (70.0f * pct_vida), 10 + 7, al_map_rgb(50, 220, 50));
+    al_draw_rectangle(45, 10, 45 + 70, 10 + 7, al_map_rgb(220, 220, 220), 1.0f);
+
+    // Barra de Radiação: SÓ desenhada se o valor for maior que 0
+    if (faxineiro->barra_radio > 0.0f) {
+        al_draw_text(fonte, al_map_rgb(220, 255, 100), 10, 21, ALLEGRO_ALIGN_LEFT, "RAD");
+        al_draw_filled_rectangle(45, 21, 45 + 70, 21 + 7, al_map_rgb(35, 35, 35));
+        float pct_radio = faxineiro->barra_radio / 100.0f;
+        if (pct_radio < 0.0f) pct_radio = 0.0f;
+        if (pct_radio > 1.0f) pct_radio = 1.0f;
+        al_draw_filled_rectangle(45, 21, 45 + (70.0f * pct_radio), 21 + 7, al_map_rgb(200, 220, 20));
+        al_draw_rectangle(45, 21, 45 + 70, 21 + 7, al_map_rgb(220, 220, 220), 1.0f);
+    }
+
+    // --- HUD Inferior Direito: Munição e Inventário da Arma Equipada ---
+    // Reposicionada para baixo em 1x a própria altura (y = 252 + 7 = 259)
+    if (faxineiro->arma_equipada == ARMA_MOP && faxineiro->possui_mop) {
+        // Ícones de inventário: até 3 refis de água empilhados horizontalmente logo acima da barra
+        for (int i = 0; i < 3; i++) {
+            float slot_x = 390.0f + (i * 9.0f);
+            float slot_y = 250.0f;
+            al_draw_filled_rectangle(slot_x, slot_y, slot_x + 6.0f, slot_y + 6.0f, al_map_rgb(25, 25, 25));
+            al_draw_rectangle(slot_x, slot_y, slot_x + 6.0f, slot_y + 6.0f, al_map_rgb(70, 70, 70), 1.0f);
+            if (i < faxineiro->refil_agua_qtd) {
+                al_draw_filled_rectangle(slot_x + 1.0f, slot_y + 1.0f, slot_x + 5.0f, slot_y + 5.0f, al_map_rgb(60, 160, 255));
+            }
+        }
+
+        al_draw_text(fonte, al_map_rgb(120, 200, 255), 350, 259, ALLEGRO_ALIGN_LEFT, "AGUA");
+        al_draw_filled_rectangle(390, 259, 390 + 70, 259 + 7, al_map_rgb(35, 35, 35));
+        float pct_agua = faxineiro->barra_agua / 100.0f;
+        if (pct_agua < 0.0f) pct_agua = 0.0f;
+        if (pct_agua > 1.0f) pct_agua = 1.0f;
+        al_draw_filled_rectangle(390, 259, 390 + (70.0f * pct_agua), 259 + 7, al_map_rgb(60, 160, 255));
+        al_draw_rectangle(390, 259, 390 + 70, 259 + 7, al_map_rgb(220, 220, 220), 1.0f);
+    } else if (faxineiro->arma_equipada == ARMA_SOPRADOR && faxineiro->possui_soprador) {
+        // Ícones de inventário: até 3 baterias empilhadas horizontalmente logo acima da barra
+        for (int i = 0; i < 3; i++) {
+            float slot_x = 390.0f + (i * 9.0f);
+            float slot_y = 250.0f;
+            al_draw_filled_rectangle(slot_x, slot_y, slot_x + 6.0f, slot_y + 6.0f, al_map_rgb(25, 25, 25));
+            al_draw_rectangle(slot_x, slot_y, slot_x + 6.0f, slot_y + 6.0f, al_map_rgb(70, 70, 70), 1.0f);
+            if (i < faxineiro->bateria_qtd) {
+                al_draw_filled_rectangle(slot_x + 1.0f, slot_y + 1.0f, slot_x + 5.0f, slot_y + 5.0f, al_map_rgb(255, 200, 20));
+            }
+        }
+
+        al_draw_text(fonte, al_map_rgb(255, 220, 60), 330, 259, ALLEGRO_ALIGN_LEFT, "BATERIA");
+        al_draw_filled_rectangle(390, 259, 390 + 70, 259 + 7, al_map_rgb(35, 35, 35));
+        float pct_bat = faxineiro->barra_bateria / 100.0f;
+        if (pct_bat < 0.0f) pct_bat = 0.0f;
+        if (pct_bat > 1.0f) pct_bat = 1.0f;
+        al_draw_filled_rectangle(390, 259, 390 + (70.0f * pct_bat), 259 + 7, al_map_rgb(255, 200, 20));
+        al_draw_rectangle(390, 259, 390 + 70, 259 + 7, al_map_rgb(220, 220, 220), 1.0f);
+    }
+
+    // Fade entre salas (cobre a tela inteira em camera_ui)
+    if (estado_fade > 0) al_draw_filled_rectangle(0, 0, LARGURA_MAPA, ALTURA_MAPA, al_map_rgba(0, 0, 0, alpha_fade));
 }
 
 void desenhar_ui(int estado_jogo, int opcao_menu, int opcao_confirma, int opcao_pause,

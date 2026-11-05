@@ -3,7 +3,9 @@
 
 #include "defs.h"
 
-void disparar_arma_jogador(Jogador *faxineiro, Projetil *projeteis, int max_proj);
+void instanciar_texto_flutuante(TextoFlutuante *textos, int max_textos, float x, float y, const char *mensagem);
+void disparar_arma_jogador(Jogador *faxineiro, Projetil *projeteis, int max_proj, TextoFlutuante *textos, int max_textos);
+void atualizar_soprador(Jogador *faxineiro, Soprador *soprador, bool atirando, TextoFlutuante *textos, int max_textos);
 void atualizar_projeteis(Projetil *projeteis, int max_proj, int sala_atual);
 
 #endif

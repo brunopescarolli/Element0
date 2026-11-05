@@ -168,18 +168,37 @@ void atualizar_inimigo(Inimigo *anomalia, Jogador *faxineiro,
         anomalia->timer_resfriamento--;
     }
 
-    if (anomalia->recebendo_calor) {
-        anomalia->temperatura += (4.0 / FPS);
+    if (anomalia->recebendo_calor_soprador) {
+        anomalia->temperatura += (100.0f / (float)FPS);
+        if (anomalia->temperatura > 1000.0f) {
+            anomalia->temperatura = 1000.0f;
+        }
+    } else if (anomalia->recebendo_calor_jogador) {
+        if (anomalia->temperatura < TEMP_JOGADOR) {
+            anomalia->temperatura += (4.0f / (float)FPS);
+            if (anomalia->temperatura > TEMP_JOGADOR) {
+                anomalia->temperatura = TEMP_JOGADOR;
+            }
+        } else if (anomalia->temperatura > TEMP_JOGADOR) {
+            float taxa_resfriamento = (2.0f / (float)FPS);
+            if (anomalia->timer_resfriamento > 0) {
+                taxa_resfriamento *= 2.0f;
+            }
+            anomalia->temperatura -= taxa_resfriamento;
+            if (anomalia->temperatura < TEMP_JOGADOR) {
+                anomalia->temperatura = TEMP_JOGADOR;
+            }
+        }
     } else {
-        float taxa_resfriamento = (2.0 / FPS);
+        float taxa_resfriamento = (2.0f / (float)FPS);
         if (anomalia->timer_resfriamento > 0) {
-            taxa_resfriamento *= 2.0;
+            taxa_resfriamento *= 2.0f;
         }
         anomalia->temperatura -= taxa_resfriamento;
     }
 
-    if (anomalia->temperatura > TEMP_JOGADOR) anomalia->temperatura = TEMP_JOGADOR;
     if (anomalia->temperatura < TEMP_ESTACAO) anomalia->temperatura = TEMP_ESTACAO;
+    if (anomalia->temperatura > 1000.0f) anomalia->temperatura = 1000.0f;
 
     if (anomalia->temperatura >= dados_anomalia.ponto_fusao && anomalia->estado_atual == SOLIDO) {
         anomalia->estado_atual = LIQUIDO;
