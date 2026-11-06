@@ -432,7 +432,7 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *a
     if (input->atirando) {
         disparar_arma_jogador(faxineiro, projeteis, max_proj, textos, max_textos);
     }
-    atualizar_soprador(faxineiro, soprador, input->atirando, textos, max_textos);
+    atualizar_soprador(faxineiro, soprador, input->atirando, particulas, max_particulas, textos, max_textos);
     atualizar_projeteis(projeteis, max_proj, *sala_atual,
                         plataformas, total_plat, escadas, total_escadas,
                         particulas, max_particulas);

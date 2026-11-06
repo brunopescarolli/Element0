@@ -58,6 +58,11 @@ void atualizar_particulas(Particula *particulas, int max_particulas) {
             particulas[i].vy += 0.07f;
         } else if (particulas[i].tipo == PARTICULA_VAPOR) {
             particulas[i].tamanho += 0.06f;
+        } else if (particulas[i].tipo == PARTICULA_CALOR) {
+            float progresso = 1.0f - (particulas[i].vida / particulas[i].vida_maxima);
+            if (progresso < 0.0f) progresso = 0.0f;
+            if (progresso > 1.0f) progresso = 1.0f;
+            particulas[i].tamanho = 4.0f + (4.0f * progresso);
         }
 
         particulas[i].vida -= 1.0f;

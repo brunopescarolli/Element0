@@ -4,6 +4,19 @@
 #include "enemy.h"
 #include "elementos.h"
 
+static ALLEGRO_BITMAP *carregar_sprite_seguro(const char *caminho) {
+    ALLEGRO_BITMAP *sprite = al_load_bitmap(caminho);
+    if (sprite == NULL) {
+        char caminho_alt[256];
+        snprintf(caminho_alt, sizeof(caminho_alt), "../%s", caminho);
+        sprite = al_load_bitmap(caminho_alt);
+    }
+    if (sprite == NULL) {
+        printf("Aviso: Nao foi possivel carregar a sprite '%s'. Usando placeholder.\n", caminho);
+    }
+    return sprite;
+}
+
 static void reiniciar_campanha(Game *game) {
     game->sala_atual = 0;
     game->estado_fade = 0;
@@ -374,9 +387,18 @@ bool game_init(Game *game) {
     for (int i = 0; i < MAX_TEXTOS_FLUTUANTES; i++) game->textos_flutuantes[i].ativo = false;
 
     game->arma_mop = (Item){ 62.0, 127.0, 0.0, 30.0, true, 0, NULL };
-    game->arma_mop.sprite = al_load_bitmap("assets/sprites/mop.png");
+    game->arma_mop.sprite = carregar_sprite_seguro("assets/sprites/mop.png");
 
-    game->arma_soprador = (Item){ 80.0f, 127.0f, 0.0f, 30.0f, true, 0, NULL };
+    game->sprites.sprite_bateria = carregar_sprite_seguro("assets/sprites/bateria.png");
+    game->sprites.sprite_refil = carregar_sprite_seguro("assets/sprites/refil.png");
+    game->sprites.sprite_soprador = carregar_sprite_seguro("assets/sprites/soprador.png");
+    game->sprites.sprite_medkit = carregar_sprite_seguro("assets/sprites/medkit.png");
+    game->sprites.sprite_hud_vida = carregar_sprite_seguro("assets/sprites/barra_vida.png");
+    game->sprites.sprite_hud_agua = carregar_sprite_seguro("assets/sprites/barra_agua.png");
+    game->sprites.sprite_hud_bateria = carregar_sprite_seguro("assets/sprites/barra_bateria.png");
+    game->sprites.sprite_hud_caveira = carregar_sprite_seguro("assets/sprites/caveira_radiacao.png");
+
+    game->arma_soprador = (Item){ 80.0f, 127.0f, 0.0f, 30.0f, true, 0, game->sprites.sprite_soprador };
     game->soprador = (Soprador){ 0.0f, 0.0f, 34.0f, 16.0f, false };
     game->refil_agua = (Coletavel){ 100.0f, 115.0f, 12.0f, 12.0f, 0, true };
     game->bateria = (Coletavel){ 120.0f, 115.0f, 12.0f, 12.0f, 0, true };
@@ -1101,7 +1123,14 @@ void game_cleanup(Game *game) {
     }
     if (game->sprites.bg_escadaria) al_destroy_bitmap(game->sprites.bg_escadaria);
     if (game->arma_mop.sprite) al_destroy_bitmap(game->arma_mop.sprite);
-    if (game->arma_soprador.sprite) al_destroy_bitmap(game->arma_soprador.sprite);
+    if (game->sprites.sprite_bateria) al_destroy_bitmap(game->sprites.sprite_bateria);
+    if (game->sprites.sprite_refil) al_destroy_bitmap(game->sprites.sprite_refil);
+    if (game->sprites.sprite_soprador) al_destroy_bitmap(game->sprites.sprite_soprador);
+    if (game->sprites.sprite_medkit) al_destroy_bitmap(game->sprites.sprite_medkit);
+    if (game->sprites.sprite_hud_vida) al_destroy_bitmap(game->sprites.sprite_hud_vida);
+    if (game->sprites.sprite_hud_agua) al_destroy_bitmap(game->sprites.sprite_hud_agua);
+    if (game->sprites.sprite_hud_bateria) al_destroy_bitmap(game->sprites.sprite_hud_bateria);
+    if (game->sprites.sprite_hud_caveira) al_destroy_bitmap(game->sprites.sprite_hud_caveira);
     if (game->fonte) al_destroy_font(game->fonte);
     if (game->timer) al_destroy_timer(game->timer);
     if (game->fila_eventos) al_destroy_event_queue(game->fila_eventos);

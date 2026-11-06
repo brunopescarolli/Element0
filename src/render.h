@@ -16,12 +16,25 @@ typedef struct {
     ALLEGRO_BITMAP *sprite_escada;
     ALLEGRO_BITMAP *sprite_escada_vertical;
     ALLEGRO_BITMAP *sprite_prop1;
+    ALLEGRO_BITMAP *sprite_bateria;
+    ALLEGRO_BITMAP *sprite_refil;
+    ALLEGRO_BITMAP *sprite_soprador;
+    ALLEGRO_BITMAP *sprite_medkit;
+    ALLEGRO_BITMAP *sprite_hud_vida;
+    ALLEGRO_BITMAP *sprite_hud_agua;
+    ALLEGRO_BITMAP *sprite_hud_bateria;
+    ALLEGRO_BITMAP *sprite_hud_caveira;
 } GameSprites;
 
 ALLEGRO_COLOR obter_cor_temperatura(float temp);
 void obter_cores_temperatura(float temp, ALLEGRO_COLOR *cor_borda, ALLEGRO_COLOR *cor_centro);
 void desenhar_sprite_quente(ALLEGRO_BITMAP *sprite, float centro_x, float centro_y, float larg_fallback, float alt_fallback, int flags, float temp, int frame_atual);
 void desenhar_particulas(Particula *particulas, int max_particulas);
+void desenhar_segmento_bateria(float x, float y, ALLEGRO_COLOR cor);
+void desenhar_segmento_bateria_topo(float x, float y, ALLEGRO_COLOR cor);
+void desenhar_icone_refil_agua(float x, float y, ALLEGRO_COLOR cor);
+void desenhar_icone_bateria_guardada(float x, float y, ALLEGRO_COLOR cor);
+void desenhar_hud_jogador(Jogador *faxineiro, GameSprites *sprites);
 
 void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item *arma_mop, Item *arma_soprador,
                     Soprador *soprador, Coletavel *refil_agua, Coletavel *bateria, Coletavel *kit_medico,

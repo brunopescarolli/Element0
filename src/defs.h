@@ -62,7 +62,7 @@ enum TipoFrame { FRAME_IDLE = 0, FRAME_BRE = 1, FRAME_WALK1 = 2, FRAME_WALK2 = 3
 
 enum TipoProjetil { PROJETIL_AGUA, PROJETIL_FOGO, PROJETIL_NORMAL };
 enum TipoArma { ARMA_NENHUMA = -1, ARMA_MOP = 0, ARMA_SOPRADOR = 1 };
-enum TipoParticula { PARTICULA_GOTA = 0, PARTICULA_VAPOR = 1 };
+enum TipoParticula { PARTICULA_GOTA = 0, PARTICULA_VAPOR = 1, PARTICULA_CALOR = 2 };
 
 typedef struct {
     float x, y;

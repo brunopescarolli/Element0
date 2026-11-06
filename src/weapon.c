@@ -80,7 +80,9 @@ void disparar_arma_jogador(Jogador *faxineiro, Projetil *projeteis, int max_proj
     }
 }
 
-void atualizar_soprador(Jogador *faxineiro, Soprador *soprador, bool atirando, TextoFlutuante *textos, int max_textos) {
+void atualizar_soprador(Jogador *faxineiro, Soprador *soprador, bool atirando,
+                        Particula *particulas, int max_particulas,
+                        TextoFlutuante *textos, int max_textos) {
     if (faxineiro->arma_equipada == ARMA_SOPRADOR && faxineiro->possui_soprador && atirando) {
         if (faxineiro->barra_bateria <= 0.0f && faxineiro->bateria_qtd > 0) {
             faxineiro->bateria_qtd--;
@@ -93,12 +95,35 @@ void atualizar_soprador(Jogador *faxineiro, Soprador *soprador, bool atirando, T
             soprador->h = 16.0f;
 
             float mao_y = faxineiro->y - (faxineiro->body_h / 2.0f) + 4.0f;
+            int tipo_frame_atual = faxineiro->esta_andando ?
+                (faxineiro->frame_atual == 0 || faxineiro->frame_atual == 2 ? FRAME_WALK1 : FRAME_IDLE) :
+                (faxineiro->frame_atual == 0 ? FRAME_IDLE : FRAME_BRE);
+            if (tipo_frame_atual == FRAME_BRE) mao_y += 1.0f;
+            else if (tipo_frame_atual == FRAME_WALK1) mao_y -= 2.0f;
+
             soprador->y = mao_y - (soprador->h / 2.0f);
             float offset_arma_x = (faxineiro->direcao_atual == DIR_DIREITA) ? 7.0f : -7.0f;
             if (faxineiro->direcao_atual == DIR_DIREITA) {
                 soprador->x = faxineiro->x + 10.0f + offset_arma_x;
             } else {
                 soprador->x = faxineiro->x - 10.0f - soprador->w + offset_arma_x;
+            }
+
+            // Instancia partículas de "Ondas de Calor" saindo do bocal do Soprador
+            if (particulas != NULL && max_particulas > 0) {
+                float dir_x = (faxineiro->direcao_atual == DIR_DIREITA) ? 1.0f : -1.0f;
+                float bocal_x = (faxineiro->direcao_atual == DIR_DIREITA)
+                    ? soprador->x
+                    : (soprador->x + soprador->w - 1.0f);
+                float jitter_x = dir_x * (((float)(rand() % 100) / 100.0f) * 1.8f);
+                float offset_y = (((float)(rand() % 200) / 100.0f) - 1.0f) * 2.2f;
+                float vx = dir_x * (1.35f + (((float)(rand() % 100) / 100.0f) * 0.55f));
+                float vy = (((float)(rand() % 200) / 100.0f) - 1.0f) * 0.12f;
+                float vida = 18.0f + (float)(rand() % 6);
+                ALLEGRO_COLOR cor_onda = al_map_rgba(255, 100, 0, 128);
+                instanciar_particula(particulas, max_particulas,
+                                     bocal_x + jitter_x, (mao_y - 1.0f) + offset_y,
+                                     vx, vy, vida, PARTICULA_CALOR, cor_onda, 4.0f);
             }
 
             // Redução de 3x no consumo (duração 3x maior)
