@@ -5,7 +5,7 @@
 
 void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *arma_soprador,
                        Soprador *soprador, Coletavel *refil_agua, Coletavel *bateria, Coletavel *kit_medico,
-                       Coletavel *item_scanner,
+                       Coletavel *item_scanner, Coletavel *pilula_antirad,
                        Inimigo *anomalia, Plataforma *plataformas, int total_plat, Escada *escadas, int total_escadas,
                        Porta *portas, int total_portas, Projetil *projeteis, int max_proj,
                        Particula *particulas, int max_particulas,

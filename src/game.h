@@ -50,14 +50,24 @@ typedef struct {
     Coletavel bateria;
     Coletavel kit_medico;
     Coletavel item_scanner;
+    Coletavel pilula_antirad;
     Inimigo anomalia;
     Projetil projeteis[MAX_PROJETEIS];
     Particula particulas[MAX_PARTICULAS];
+    MarcaFuligem marcas_fuligem[MAX_MARCAS_FULIGEM];
 
     int modo_scanner;
-    bool elemento_descoberto[MAX_ELEMENTOS + 1];
+    bool descoberto_run[MAX_ELEMENTOS + 1];
+    bool descoberto_global[MAX_ELEMENTOS + 1];
+    char descobridor_global[MAX_ELEMENTOS + 1][32];
+    bool novo_na_tabela[MAX_ELEMENTOS + 1];
     float tempo_scan;
     int elemento_foco_id;
+
+    int elemento_tabela_selecionado;
+    int timer_anim_tabela;
+    int frame_anim_tabela;
+    bool mostrar_botao_reset_tabela;
 
     Plataforma mundo_plataformas[TOTAL_PLATAFORMAS];
     Porta mundo_portas[TOTAL_PORTAS];

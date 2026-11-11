@@ -12,6 +12,8 @@ void atualizar_particulas(Particula *particulas, int max_particulas);
 void atualizar_inimigo(Inimigo *anomalia, Jogador *faxineiro,
                         Plataforma *plataformas, int total_plat, Escada *escadas, int total_escadas,
                         int sala_atual, int estado_fade, Projetil *projeteis, int max_proj,
-                        Particula *particulas, int max_particulas);
+                        Particula *particulas, int max_particulas,
+                        MarcaFuligem *marcas_fuligem, int max_marcas,
+                        TextoFlutuante *textos, int max_textos);
 
 #endif

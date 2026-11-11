@@ -1,7 +1,10 @@
+#include <stdlib.h>
+#include <time.h>
 #include "game.h"
 
 int main(void) {
-    srand(time(NULL));
+    srand((unsigned int)time(NULL));
+    (void)rand();
 
     Game game = {0};
     if (!game_init(&game)) {

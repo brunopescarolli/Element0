@@ -1,119 +1,120 @@
-Numero_Atomico,Simbolo,Nome,Periodo,Grupo_Familia,Categoria,Estado_Fisico_20C,Magnetico,Radioativo,Ponto_Fusao_C,Ponto_Ebulicao_C,Pontos_de_Vida_Dureza
-1,H,Hidrogênio,1,Não-Metais Reativos,Não-metal,Gasoso,Não,Não,-259.2,-252.9,10
-2,He,Hélio,1,Gases Nobres,Não-metal,Gasoso,Não,Não,-272.2,-268.9,10
-3,Li,Lítio,2,Metais Alcalinos,Metal,Sólido,Não,Não,180.5,1342.0,20
-4,Be,Berílio,2,Metais Alcalino-Terrosos,Metal,Sólido,Não,Não,1287.0,2469.0,80
-5,B,Boro,2,Metaloides,Metaloide,Sólido,Não,Não,2077.0,4000.0,100
-6,C,Carbono,2,Não-Metais Reativos,Não-metal,Sólido,Não,Não,3550.0,3825.0,100
-7,N,Nitrogênio,2,Não-Metais Reativos,Não-metal,Gasoso,Não,Não,-210.0,-195.8,10
-8,O,Oxigênio,2,Não-Metais Reativos,Não-metal,Gasoso,Não,Não,-218.8,-183.0,10
-9,F,Flúor,2,Halogênios,Não-metal,Gasoso,Não,Não,-219.7,-188.1,10
-10,Ne,Neônio,2,Gases Nobres,Não-metal,Gasoso,Não,Não,-248.6,-246.0,10
-11,Na,Sódio,3,Metais Alcalinos,Metal,Sólido,Não,Não,97.8,882.9,20
-12,Mg,Magnésio,3,Metais Alcalino-Terrosos,Metal,Sólido,Não,Não,650.0,1090.0,80
-13,Al,Alumínio,3,Metais Pós-Transição,Metal,Sólido,Não,Não,660.3,2519.0,60
-14,Si,Silício,3,Metaloides,Metaloide,Sólido,Não,Não,1414.0,3265.0,100
-15,P,Fósforo,3,Não-Metais Reativos,Não-metal,Sólido,Não,Não,44.2,280.5,80
-16,S,Enxofre,3,Não-Metais Reativos,Não-metal,Sólido,Não,Não,115.2,444.6,80
-17,Cl,Cloro,3,Halogênios,Não-metal,Gasoso,Não,Não,-101.5,-34.0,10
-18,Ar,Argônio,3,Gases Nobres,Não-metal,Gasoso,Não,Não,-189.3,-185.8,10
-19,K,Potássio,4,Metais Alcalinos,Metal,Sólido,Não,Não,63.5,759.0,20
-20,Ca,Cálcio,4,Metais Alcalino-Terrosos,Metal,Sólido,Não,Não,842.0,1484.0,80
-21,Sc,Escândio,4,Metais de Transição,Metal,Sólido,Não,Não,1541.0,2836.0,80
-22,Ti,Titânio,4,Metais de Transição,Metal,Sólido,Não,Não,1670.0,3287.0,150
-23,V,Vanádio,4,Metais de Transição,Metal,Sólido,Não,Não,1910.0,3407.0,150
-24,Cr,Cromo,4,Metais de Transição,Metal,Sólido,Não,Não,1907.0,2671.0,300
-25,Mn,Manganês,4,Metais de Transição,Metal,Sólido,Não,Não,1246.0,2061.0,80
-26,Fe,Ferro,4,Metais de Transição,Metal,Sólido,Sim,Não,1538.0,2861.0,150
-27,Co,Cobalto,4,Metais de Transição,Metal,Sólido,Sim,Não,1495.0,2927.0,150
-28,Ni,Níquel,4,Metais de Transição,Metal,Sólido,Sim,Não,1455.0,2913.0,150
-29,Cu,Cobre,4,Metais de Transição,Metal,Sólido,Não,Não,1084.6,2562.0,60
-30,Zn,Zinco,4,Metais de Transição,Metal,Sólido,Não,Não,419.5,907.0,60
-31,Ga,Gálio,4,Metais Pós-Transição,Metal,Sólido,Não,Não,29.8,2400.0,80
-32,Ge,Germânio,4,Metaloides,Metaloide,Sólido,Não,Não,938.3,2833.0,100
-33,As,Arsênio,4,Metaloides,Metaloide,Sólido,Não,Não,817.0,615.0,80
-34,Se,Selênio,4,Não-Metais Reativos,Não-metal,Sólido,Não,Não,221.0,685.0,80
-35,Br,Bromo,4,Halogênios,Não-metal,Líquido,Não,Não,-7.2,58.8,80
-36,Kr,Criptônio,4,Gases Nobres,Não-metal,Gasoso,Não,Não,-157.4,-153.4,10
-37,Rb,Rubídio,5,Metais Alcalinos,Metal,Sólido,Não,Não,39.3,688.0,20
-38,Sr,Estrôncio,5,Metais Alcalino-Terrosos,Metal,Sólido,Não,Não,777.0,1377.0,80
-39,Y,Ítrio,5,Metais de Transição,Metal,Sólido,Não,Não,1522.0,3345.0,80
-40,Zr,Zircônio,5,Metais de Transição,Metal,Sólido,Não,Não,1854.0,4409.0,80
-41,Nb,Nióbio,5,Metais de Transição,Metal,Sólido,Não,Não,2477.0,4744.0,80
-42,Mo,Molibdênio,5,Metais de Transição,Metal,Sólido,Não,Não,2622.0,4639.0,80
-43,Tc,Tecnécio,5,Metais de Transição,Metal,Sólido,Não,Sim,2157.0,4265.0,80
-44,Ru,Rutênio,5,Metais de Transição,Metal,Sólido,Não,Não,2333.0,4150.0,150
-45,Rh,Ródio,5,Metais de Transição,Metal,Sólido,Não,Não,1963.0,3695.0,300
-46,Pd,Paládio,5,Metais de Transição,Metal,Sólido,Não,Não,1554.9,2963.0,150
-47,Ag,Prata,5,Metais de Transição,Metal,Sólido,Não,Não,961.8,2162.0,60
-48,Cd,Cádmio,5,Metais de Transição,Metal,Sólido,Não,Não,321.1,767.0,80
-49,In,Índio,5,Metais Pós-Transição,Metal,Sólido,Não,Não,156.6,2072.0,80
-50,Sn,Estanho,5,Metais Pós-Transição,Metal,Sólido,Não,Não,231.9,2602.0,60
-51,Sb,Antimônio,5,Metaloides,Metaloide,Sólido,Não,Não,630.6,1587.0,80
-52,Te,Telúrio,5,Metaloides,Metaloide,Sólido,Não,Não,449.5,988.0,80
-53,I,Iodo,5,Halogênios,Não-metal,Sólido,Não,Não,113.7,184.4,80
-54,Xe,Xenônio,5,Gases Nobres,Não-metal,Gasoso,Não,Não,-111.8,-108.1,10
-55,Cs,Césio,6,Metais Alcalinos,Metal,Sólido,Não,Não,28.5,671.0,20
-56,Ba,Bário,6,Metais Alcalino-Terrosos,Metal,Sólido,Não,Não,727.0,1845.0,80
-57,La,Lantânio,6,Lantanídeos,Metal,Sólido,Não,Não,920.0,3464.0,80
-58,Ce,Cério,6,Lantanídeos,Metal,Sólido,Não,Não,799.0,3443.0,80
-59,Pr,Praseodímio,6,Lantanídeos,Metal,Sólido,Não,Não,931.0,3520.0,80
-60,Nd,Neodímio,6,Lantanídeos,Metal,Sólido,Não,Não,1024.0,3074.0,80
-61,Pm,Promécio,6,Lantanídeos,Metal,Sólido,Não,Sim,1042.0,3000.0,80
-62,Sm,Samário,6,Lantanídeos,Metal,Sólido,Não,Não,1072.0,1794.0,80
-63,Eu,Európio,6,Lantanídeos,Metal,Sólido,Não,Não,822.0,1529.0,80
-64,Gd,Gadolínio,6,Lantanídeos,Metal,Sólido,Sim,Não,1313.0,3273.0,80
-65,Tb,Térbio,6,Lantanídeos,Metal,Sólido,Não,Não,1356.0,3230.0,80
-66,Dy,Disprósio,6,Lantanídeos,Metal,Sólido,Não,Não,1412.0,2567.0,80
-67,Ho,Hólmio,6,Lantanídeos,Metal,Sólido,Não,Não,1472.0,2700.0,80
-68,Er,Érbio,6,Lantanídeos,Metal,Sólido,Não,Não,1529.0,2868.0,80
-69,Tm,Túlio,6,Lantanídeos,Metal,Sólido,Não,Não,1545.0,1950.0,80
-70,Yb,Itérbio,6,Lantanídeos,Metal,Sólido,Não,Não,824.0,1196.0,80
-71,Lu,Lutécio,6,Metais de Transição,Metal,Sólido,Não,Não,1663.0,3402.0,80
-72,Hf,Háfnio,6,Metais de Transição,Metal,Sólido,Não,Não,2233.0,4603.0,80
-73,Ta,Tântalo,6,Metais de Transição,Metal,Sólido,Não,Não,3017.0,5458.0,80
-74,W,Tungstênio,6,Metais de Transição,Metal,Sólido,Não,Não,3422.0,5555.0,300
-75,Re,Rênio,6,Metais de Transição,Metal,Sólido,Não,Não,3185.0,5596.0,300
-76,Os,Ósmio,6,Metais de Transição,Metal,Sólido,Não,Não,3033.0,5012.0,300
-77,Ir,Irídio,6,Metais de Transição,Metal,Sólido,Não,Não,2446.0,4428.0,300
-78,Pt,Platina,6,Metais de Transição,Metal,Sólido,Não,Não,1768.3,3825.0,150
-79,Au,Ouro,6,Metais de Transição,Metal,Sólido,Não,Não,1064.2,2856.0,60
-80,Hg,Mercúrio,6,Metais de Transição,Metal,Líquido,Não,Não,-38.8,356.7,80
-81,Tl,Tálio,6,Metais Pós-Transição,Metal,Sólido,Não,Não,304.0,1473.0,80
-82,Pb,Chumbo,6,Metais Pós-Transição,Metal,Sólido,Não,Não,327.5,1749.0,60
-83,Bi,Bismuto,6,Metais Pós-Transição,Metal,Sólido,Não,Não,271.4,1564.0,80
-84,Po,Polônio,6,Metaloides,Metaloide,Sólido,Não,Sim,254.0,962.0,80
-85,At,Astato,6,Halogênios,Não-metal,Sólido,Não,Sim,302.0,337.0,80
-86,Rn,Radônio,6,Gases Nobres,Não-metal,Gasoso,Não,Sim,-71.0,-61.7,10
-87,Fr,Frâncio,7,Metais Alcalinos,Metal,Sólido,Não,Sim,27.0,677.0,20
-88,Ra,Rádio,7,Metais Alcalino-Terrosos,Metal,Sólido,Não,Sim,700.0,1737.0,80
-89,Ac,Actínio,7,Actinídeos,Metal,Sólido,Não,Sim,1050.0,3200.0,80
-90,Th,Tório,7,Actinídeos,Metal,Sólido,Não,Sim,1750.0,4788.0,80
-91,Pa,Protactínio,7,Actinídeos,Metal,Sólido,Não,Sim,1572.0,4027.0,80
-92,U,Urânio,7,Actinídeos,Metal,Sólido,Não,Sim,1135.0,4131.0,300
-93,Np,Netúnio,7,Actinídeos,Metal,Sólido,Não,Sim,644.0,3902.0,80
-94,Pu,Plutônio,7,Actinídeos,Metal,Sólido,Não,Sim,640.0,3228.0,80
-95,Am,Amerício,7,Actinídeos,Metal,Sólido,Não,Sim,1176.0,2607.0,80
-96,Cm,Cúrio,7,Actinídeos,Metal,Sólido,Não,Sim,1345.0,3110.0,80
-97,Bk,Berquélio,7,Actinídeos,Metal,Sólido,Não,Sim,986.0,2627.0,80
-98,Cf,Califórnio,7,Actinídeos,Metal,Sólido,Não,Sim,900.0,1470.0,80
-99,Es,Einstênio,7,Actinídeos,Metal,Sólido,Não,Sim,860.0,996.0,80
-100,Fm,Férmio,7,Actinídeos,Metal,Sólido,Não,Sim,1527.0,999999,80
-101,Md,Mendelévio,7,Actinídeos,Metal,Sólido,Não,Sim,827.0,999999,5
-102,No,Nobélio,7,Actinídeos,Metal,Sólido,Não,Sim,827.0,999999,5
-103,Lr,Lawrêncio,7,Metais de Transição,Metal,Sólido,Não,Sim,1627.0,999999,5
-104,Rf,Rutherfórdio,7,Metais de Transição,Metal,Sólido,Não,Sim,999999,999999,5
-105,Db,Dúbnio,7,Metais de Transição,Metal,Sólido,Não,Sim,999999,999999,5
-106,Sg,Seabórgio,7,Metais de Transição,Metal,Sólido,Não,Sim,999999,999999,5
-107,Bh,Bóhrio,7,Metais de Transição,Metal,Sólido,Não,Sim,999999,999999,5
-108,Hs,Hássio,7,Metais de Transição,Metal,Sólido,Não,Sim,999999,999999,5
-109,Mt,Meitnério,7,Metais de Transição,Metal,Sólido,Não,Sim,999999,999999,5
-110,Ds,Darmstádtio,7,Metais de Transição,Metal,Sólido,Não,Sim,999999,999999,5
-111,Rg,Roentgênio,7,Metais de Transição,Metal,Sólido,Não,Sim,999999,999999,5
-112,Cn,Copernício,7,Metais de Transição,Metal,Sólido,Não,Sim,999999,999999,5
-113,Nh,Nihônio,7,Metais Pós-Transição,Metal,Sólido,Não,Sim,999999,999999,5
-114,Fl,Fleróvio,7,Metais Pós-Transição,Metal,Sólido,Não,Sim,999999,999999,5
-115,Mc,Moscóvio,7,Metais Pós-Transição,Metal,Sólido,Não,Sim,999999,999999,5
-116,Lv,Livermório,7,Metais Pós-Transição,Metal,Sólido,Não,Sim,999999,999999,5
-117,Ts,Tenessino,7,Halogênios,Não-metal,Sólido,Não,Sim,999999,999999,5
-118,Og,Oganessônio,7,Gases Nobres,Não-metal,Sólido,Não,Sim,999999,999999,10
+Numero_Atomico,Simbolo,Nome,Periodo,Grupo_Familia,Categoria,Estado_Fisico_20C,Magnetico,Radioativo,Ponto_Fusao_C,Ponto_Ebulicao_C,Pontos_de_Vida_Dureza,Estavel_Argonio_20C,Grupo_Gameplay,Reacao_Agua,Cor_R,Cor_G,Cor_B
+0,Nt,Neutrônio,0,Matéria Degenerada,Singularidade,Superfluido,Sim,Sim,0.0,999999.0,1000,Sim,Boss_Elemento_Zero,Moderacao Nuclear,80,40,120
+1,H,Hidrogênio,1,Não-Metais Reativos,Não-metal,Gasoso,Não,Não,-259.2,-252.9,10,Sim,Gas_Atmosferico,Empurrao Gasoso,182,225,250
+2,He,Hélio,1,Gases Nobres,Não-metal,Gasoso,Não,Não,-272.2,-268.9,10,Sim,Gas_Atmosferico,Empurrao Gasoso,169,225,250
+3,Li,Lítio,2,Metais Alcalinos,Metal,Sólido,Não,Não,180.5,1342.0,20,Sim,Metal_Baixa_Fusao,Explosao Violenta,220,225,230
+4,Be,Berílio,2,Metais Alcalino-Terrosos,Metal,Sólido,Não,Não,1287.0,2469.0,80,Sim,Estrutural_Condutor,Resfriamento 4x,208,216,237
+5,B,Boro,2,Metaloides,Metaloide,Sólido,Não,Não,2077.0,4000.0,100,Sim,Refratario_Blindado,Resfriamento 4x,210,215,200
+6,C,Carbono,2,Não-Metais Reativos,Não-metal,Sólido,Não,Não,3550.0,3825.0,100,Sim,Refratario_Blindado,Resfriamento 4x,110,115,120
+7,N,Nitrogênio,2,Não-Metais Reativos,Não-metal,Gasoso,Não,Não,-210.0,-195.8,10,Sim,Gas_Atmosferico,Empurrao Gasoso,194,225,250
+8,O,Oxigênio,2,Não-Metais Reativos,Não-metal,Gasoso,Não,Não,-218.8,-183.0,10,Sim,Gas_Atmosferico,Empurrao Gasoso,181,225,250
+9,F,Flúor,2,Halogênios,Não-metal,Gasoso,Não,Não,-219.7,-188.1,10,Sim,Gas_Atmosferico,Explosao Violenta,168,225,250
+10,Ne,Neônio,2,Gases Nobres,Não-metal,Gasoso,Não,Não,-248.6,-246.0,10,Sim,Gas_Atmosferico,Empurrao Gasoso,185,225,250
+11,Na,Sódio,3,Metais Alcalinos,Metal,Sólido,Não,Não,97.8,882.9,20,Sim,Metal_Termossensivel_Fase1,Explosao Violenta,255,230,185
+12,Mg,Magnésio,3,Metais Alcalino-Terrosos,Metal,Sólido,Não,Não,650.0,1090.0,80,Sim,Estrutural_Condutor,Chama Exotermica,224,224,221
+13,Al,Alumínio,3,Metais Pós-Transição,Metal,Sólido,Não,Não,660.3,2519.0,60,Sim,Estrutural_Condutor,Resfriamento 4x,211,218,234
+14,Si,Silício,3,Metaloides,Metaloide,Sólido,Não,Não,1414.0,3265.0,100,Sim,Estrutural_Condutor,Resfriamento 4x,213,215,197
+15,P,Fósforo,3,Não-Metais Reativos,Não-metal,Sólido,Não,Não,44.2,280.5,80,Sim,Metal_Termossensivel_Fase1,Resfriamento 4x,245,240,175
+16,S,Enxofre,3,Não-Metais Reativos,Não-metal,Sólido,Não,Não,115.2,444.6,80,Sim,Volatil_Sublimador,Resfriamento 4x,250,240,95
+17,Cl,Cloro,3,Halogênios,Não-metal,Gasoso,Não,Não,-101.5,-34.0,10,Sim,Gas_Atmosferico,Nuvem Acida,184,225,250
+18,Ar,Argônio,3,Gases Nobres,Não-metal,Gasoso,Não,Não,-189.3,-185.8,10,Sim,Gas_Atmosferico,Empurrao Gasoso,171,225,250
+19,K,Potássio,4,Metais Alcalinos,Metal,Sólido,Não,Não,63.5,759.0,20,Sim,Metal_Termossensivel_Fase1,Explosao Violenta,205,200,255
+20,Ca,Cálcio,4,Metais Alcalino-Terrosos,Metal,Sólido,Não,Não,842.0,1484.0,80,Sim,Estrutural_Condutor,Efervescencia H2,210,217,235
+21,Sc,Escândio,4,Metais de Transição,Metal,Sólido,Não,Não,1541.0,2836.0,80,Sim,Estrutural_Condutor,Resfriamento 4x,227,226,218
+22,Ti,Titânio,4,Metais de Transição,Metal,Sólido,Não,Não,1670.0,3287.0,150,Sim,Estrutural_Condutor,Resfriamento 4x,214,219,231
+23,V,Vanádio,4,Metais de Transição,Metal,Sólido,Não,Não,1910.0,3407.0,150,Sim,Refratario_Blindado,Resfriamento 4x,171,181,210
+24,Cr,Cromo,4,Metais de Transição,Metal,Sólido,Não,Não,1907.0,2671.0,300,Sim,Refratario_Blindado,Resfriamento 4x,188,198,210
+25,Mn,Manganês,4,Metais de Transição,Metal,Sólido,Não,Não,1246.0,2061.0,80,Sim,Estrutural_Condutor,Resfriamento 4x,205,215,240
+26,Fe,Ferro,4,Metais de Transição,Metal,Sólido,Sim,Não,1538.0,2861.0,150,Sim,Magnetico,Resfriamento 4x,195,185,180
+27,Co,Cobalto,4,Metais de Transição,Metal,Sólido,Sim,Não,1495.0,2927.0,150,Sim,Magnetico,Resfriamento 4x,160,185,235
+28,Ni,Níquel,4,Metais de Transição,Metal,Sólido,Sim,Não,1455.0,2913.0,150,Sim,Magnetico,Resfriamento 4x,215,220,205
+29,Cu,Cobre,4,Metais de Transição,Metal,Sólido,Não,Não,1084.6,2562.0,60,Sim,Estrutural_Condutor,Resfriamento 4x,235,145,100
+30,Zn,Zinco,4,Metais de Transição,Metal,Sólido,Não,Não,419.5,907.0,60,Sim,Estrutural_Condutor,Resfriamento 4x,200,212,245
+31,Ga,Gálio,4,Metais Pós-Transição,Metal,Sólido,Não,Não,29.8,2400.0,80,Sim,Metal_Termossensivel_Fase1,Resfriamento 4x,255,255,255
+32,Ge,Germânio,4,Metaloides,Metaloide,Sólido,Não,Não,938.3,2833.0,100,Sim,Estrutural_Condutor,Resfriamento 4x,189,215,221
+33,As,Arsênio,4,Metaloides,Metaloide,Sólido,Não,Não,817.0,615.0,80,Sim,Volatil_Sublimador,Resfriamento 4x,206,215,204
+34,Se,Selênio,4,Não-Metais Reativos,Não-metal,Sólido,Não,Não,221.0,685.0,80,Sim,Volatil_Sublimador,Resfriamento 4x,210,160,160
+35,Br,Bromo,4,Halogênios,Não-metal,Líquido,Não,Não,-7.2,58.8,80,Sim,Liquido_Nativo,Nuvem Acida,195,90,70
+36,Kr,Criptônio,4,Gases Nobres,Não-metal,Gasoso,Não,Não,-157.4,-153.4,10,Sim,Gas_Atmosferico,Empurrao Gasoso,177,225,250
+37,Rb,Rubídio,5,Metais Alcalinos,Metal,Sólido,Não,Não,39.3,688.0,20,Sim,Metal_Termossensivel_Fase1,Explosao Violenta,235,195,210
+38,Sr,Estrôncio,5,Metais Alcalino-Terrosos,Metal,Sólido,Não,Não,777.0,1377.0,80,Sim,Estrutural_Condutor,Efervescencia H2,216,220,229
+39,Y,Ítrio,5,Metais de Transição,Metal,Sólido,Não,Não,1522.0,3345.0,80,Sim,Estrutural_Condutor,Resfriamento 4x,203,214,242
+40,Zr,Zircônio,5,Metais de Transição,Metal,Sólido,Não,Não,1854.0,4409.0,80,Sim,Refratario_Blindado,Resfriamento 4x,190,200,210
+41,Nb,Nióbio,5,Metais de Transição,Metal,Sólido,Não,Não,2477.0,4744.0,80,Sim,Refratario_Blindado,Resfriamento 4x,177,187,210
+42,Mo,Molibdênio,5,Metais de Transição,Metal,Sólido,Não,Não,2622.0,4639.0,80,Sim,Refratario_Blindado,Resfriamento 4x,194,204,210
+43,Tc,Tecnécio,5,Metais de Transição,Metal,Sólido,Não,Sim,2157.0,4265.0,80,Sim,Refratario_Blindado,Resfriamento 4x,171,240,189
+44,Ru,Rutênio,5,Metais de Transição,Metal,Sólido,Não,Não,2333.0,4150.0,150,Sim,Refratario_Blindado,Resfriamento 4x,198,208,210
+45,Rh,Ródio,5,Metais de Transição,Metal,Sólido,Não,Não,1963.0,3695.0,300,Sim,Refratario_Blindado,Resfriamento 4x,185,195,210
+46,Pd,Paládio,5,Metais de Transição,Metal,Sólido,Não,Não,1554.9,2963.0,150,Sim,Estrutural_Condutor,Resfriamento 4x,202,213,243
+47,Ag,Prata,5,Metais de Transição,Metal,Sólido,Não,Não,961.8,2162.0,60,Sim,Estrutural_Condutor,Resfriamento 4x,245,250,255
+48,Cd,Cádmio,5,Metais de Transição,Metal,Sólido,Não,Não,321.1,767.0,80,Sim,Metal_Baixa_Fusao,Resfriamento 4x,215,225,240
+49,In,Índio,5,Metais Pós-Transição,Metal,Sólido,Não,Não,156.6,2072.0,80,Sim,Metal_Baixa_Fusao,Resfriamento 4x,190,215,255
+50,Sn,Estanho,5,Metais Pós-Transição,Metal,Sólido,Não,Não,231.9,2602.0,60,Sim,Metal_Baixa_Fusao,Resfriamento 4x,230,235,220
+51,Sb,Antimônio,5,Metaloides,Metaloide,Sólido,Não,Não,630.6,1587.0,80,Sim,Volatil_Sublimador,Resfriamento 4x,212,215,198
+52,Te,Telúrio,5,Metaloides,Metaloide,Sólido,Não,Não,449.5,988.0,80,Sim,Volatil_Sublimador,Resfriamento 4x,199,215,211
+53,I,Iodo,5,Halogênios,Não-metal,Sólido,Não,Não,113.7,184.4,80,Sim,Volatil_Sublimador,Nuvem Acida,175,130,210
+54,Xe,Xenônio,5,Gases Nobres,Não-metal,Gasoso,Não,Não,-111.8,-108.1,10,Sim,Gas_Atmosferico,Empurrao Gasoso,183,225,250
+55,Cs,Césio,6,Metais Alcalinos,Metal,Sólido,Não,Não,28.5,671.0,20,Sim,Metal_Termossensivel_Fase1,Explosao Violenta,255,215,130
+56,Ba,Bário,6,Metais Alcalino-Terrosos,Metal,Sólido,Não,Não,727.0,1845.0,80,Sim,Estrutural_Condutor,Efervescencia H2,222,223,223
+57,La,Lantânio,6,Lantanídeos,Metal,Sólido,Não,Não,920.0,3464.0,80,Sim,Estrutural_Condutor,Efervescencia H2,209,217,236
+58,Ce,Cério,6,Lantanídeos,Metal,Sólido,Não,Não,799.0,3443.0,80,Sim,Estrutural_Condutor,Efervescencia H2,226,225,219
+59,Pr,Praseodímio,6,Lantanídeos,Metal,Sólido,Não,Não,931.0,3520.0,80,Sim,Estrutural_Condutor,Resfriamento 4x,213,219,232
+60,Nd,Neodímio,6,Lantanídeos,Metal,Sólido,Não,Não,1024.0,3074.0,80,Sim,Estrutural_Condutor,Resfriamento 4x,200,212,245
+61,Pm,Promécio,6,Lantanídeos,Metal,Sólido,Não,Sim,1042.0,3000.0,80,Sim,Estrutural_Condutor,Resfriamento 4x,177,240,183
+62,Sm,Samário,6,Lantanídeos,Metal,Sólido,Não,Não,1072.0,1794.0,80,Sim,Estrutural_Condutor,Resfriamento 4x,204,214,241
+63,Eu,Európio,6,Lantanídeos,Metal,Sólido,Não,Não,822.0,1529.0,80,Sim,Estrutural_Condutor,Efervescencia H2,221,223,224
+64,Gd,Gadolínio,6,Lantanídeos,Metal,Sólido,Sim,Não,1313.0,3273.0,80,Sim,Magnetico,Resfriamento 4x,200,230,240
+65,Tb,Térbio,6,Lantanídeos,Metal,Sólido,Não,Não,1356.0,3230.0,80,Sim,Estrutural_Condutor,Resfriamento 4x,225,225,220
+66,Dy,Disprósio,6,Lantanídeos,Metal,Sólido,Não,Não,1412.0,2567.0,80,Sim,Estrutural_Condutor,Resfriamento 4x,212,218,233
+67,Ho,Hólmio,6,Lantanídeos,Metal,Sólido,Não,Não,1472.0,2700.0,80,Sim,Estrutural_Condutor,Resfriamento 4x,229,227,216
+68,Er,Érbio,6,Lantanídeos,Metal,Sólido,Não,Não,1529.0,2868.0,80,Sim,Estrutural_Condutor,Resfriamento 4x,216,220,229
+69,Tm,Túlio,6,Lantanídeos,Metal,Sólido,Não,Não,1545.0,1950.0,80,Sim,Estrutural_Condutor,Resfriamento 4x,203,214,242
+70,Yb,Itérbio,6,Lantanídeos,Metal,Sólido,Não,Não,824.0,1196.0,80,Sim,Estrutural_Condutor,Resfriamento 4x,220,222,225
+71,Lu,Lutécio,6,Metais de Transição,Metal,Sólido,Não,Não,1663.0,3402.0,80,Sim,Estrutural_Condutor,Resfriamento 4x,207,216,238
+72,Hf,Háfnio,6,Metais de Transição,Metal,Sólido,Não,Não,2233.0,4603.0,80,Sim,Refratario_Blindado,Resfriamento 4x,194,204,210
+73,Ta,Tântalo,6,Metais de Transição,Metal,Sólido,Não,Não,3017.0,5458.0,80,Sim,Refratario_Blindado,Resfriamento 4x,181,191,210
+74,W,Tungstênio,6,Metais de Transição,Metal,Sólido,Não,Não,3422.0,5555.0,300,Sim,Refratario_Blindado,Resfriamento 4x,198,208,210
+75,Re,Rênio,6,Metais de Transição,Metal,Sólido,Não,Não,3185.0,5596.0,300,Sim,Refratario_Blindado,Resfriamento 4x,185,195,210
+76,Os,Ósmio,6,Metais de Transição,Metal,Sólido,Não,Não,3033.0,5012.0,300,Sim,Refratario_Blindado,Resfriamento 4x,172,182,210
+77,Ir,Irídio,6,Metais de Transição,Metal,Sólido,Não,Não,2446.0,4428.0,300,Sim,Refratario_Blindado,Resfriamento 4x,189,199,210
+78,Pt,Platina,6,Metais de Transição,Metal,Sólido,Não,Não,1768.3,3825.0,150,Sim,Estrutural_Condutor,Resfriamento 4x,206,215,239
+79,Au,Ouro,6,Metais de Transição,Metal,Sólido,Não,Não,1064.2,2856.0,60,Sim,Estrutural_Condutor,Resfriamento 4x,255,215,90
+80,Hg,Mercúrio,6,Metais de Transição,Metal,Líquido,Não,Não,-38.8,356.7,80,Sim,Liquido_Nativo,Salpico Imiscivel,220,235,245
+81,Tl,Tálio,6,Metais Pós-Transição,Metal,Sólido,Não,Não,304.0,1473.0,80,Sim,Metal_Baixa_Fusao,Resfriamento 4x,180,205,195
+82,Pb,Chumbo,6,Metais Pós-Transição,Metal,Sólido,Não,Não,327.5,1749.0,60,Sim,Metal_Baixa_Fusao,Resfriamento 4x,165,170,185
+83,Bi,Bismuto,6,Metais Pós-Transição,Metal,Sólido,Não,Não,271.4,1564.0,80,Sim,Metal_Baixa_Fusao,Resfriamento 4x,240,200,245
+84,Po,Polônio,6,Metaloides,Metaloide,Sólido,Não,Sim,254.0,962.0,80,Sim,Metal_Baixa_Fusao,Resfriamento 4x,150,255,150
+85,At,Astato,6,Halogênios,Não-metal,Sólido,Não,Sim,302.0,337.0,80,Não,Instavel_Decaimento_Nuclear,Resfriamento 4x,165,240,195
+86,Rn,Radônio,6,Gases Nobres,Não-metal,Gasoso,Não,Sim,-71.0,-61.7,10,Sim,Gas_Atmosferico,Empurrao Gasoso,182,240,178
+87,Fr,Frâncio,7,Metais Alcalinos,Metal,Sólido,Não,Sim,27.0,677.0,20,Não,Instavel_Decaimento_Nuclear,Explosao Violenta,170,255,180
+88,Ra,Rádio,7,Metais Alcalino-Terrosos,Metal,Sólido,Não,Sim,700.0,1737.0,80,Não,Instavel_Decaimento_Nuclear,Efervescencia H2,186,240,174
+89,Ac,Actínio,7,Actinídeos,Metal,Sólido,Não,Sim,1050.0,3200.0,80,Não,Instavel_Decaimento_Nuclear,Resfriamento 4x,173,240,187
+90,Th,Tório,7,Actinídeos,Metal,Sólido,Não,Sim,1750.0,4788.0,80,Sim,Estrutural_Condutor,Resfriamento 4x,160,240,200
+91,Pa,Protactínio,7,Actinídeos,Metal,Sólido,Não,Sim,1572.0,4027.0,80,Sim,Estrutural_Condutor,Resfriamento 4x,177,240,183
+92,U,Urânio,7,Actinídeos,Metal,Sólido,Não,Sim,1135.0,4131.0,300,Sim,Estrutural_Condutor,Resfriamento 4x,164,240,196
+93,Np,Netúnio,7,Actinídeos,Metal,Sólido,Não,Sim,644.0,3902.0,80,Sim,Estrutural_Condutor,Resfriamento 4x,181,240,179
+94,Pu,Plutônio,7,Actinídeos,Metal,Sólido,Não,Sim,640.0,3228.0,80,Sim,Estrutural_Condutor,Resfriamento 4x,168,240,192
+95,Am,Amerício,7,Actinídeos,Metal,Sólido,Não,Sim,1176.0,2607.0,80,Sim,Estrutural_Condutor,Resfriamento 4x,185,240,175
+96,Cm,Cúrio,7,Actinídeos,Metal,Sólido,Não,Sim,1345.0,3110.0,80,Não,Instavel_Decaimento_Nuclear,Vapor Radioativo,172,240,188
+97,Bk,Berquélio,7,Actinídeos,Metal,Sólido,Não,Sim,986.0,2627.0,80,Não,Instavel_Decaimento_Nuclear,Vapor Radioativo,189,240,171
+98,Cf,Califórnio,7,Actinídeos,Metal,Sólido,Não,Sim,900.0,1470.0,80,Não,Instavel_Decaimento_Nuclear,Vapor Radioativo,176,240,184
+99,Es,Einstênio,7,Actinídeos,Metal,Sólido,Não,Sim,860.0,996.0,80,Não,Instavel_Decaimento_Nuclear,Vapor Radioativo,163,240,197
+100,Fm,Férmio,7,Actinídeos,Metal,Sólido,Não,Sim,1527.0,999999.0,80,Não,Instavel_Decaimento_Nuclear,Vapor Radioativo,180,240,180
+101,Md,Mendelévio,7,Actinídeos,Metal,Sólido,Não,Sim,827.0,999999.0,5,Não,Instavel_Decaimento_Nuclear,Vapor Radioativo,167,240,193
+102,No,Nobélio,7,Actinídeos,Metal,Sólido,Não,Sim,827.0,999999.0,5,Não,Instavel_Decaimento_Nuclear,Vapor Radioativo,184,240,176
+103,Lr,Lawrêncio,7,Metais de Transição,Metal,Sólido,Não,Sim,1627.0,999999.0,5,Não,Instavel_Decaimento_Nuclear,Vapor Radioativo,171,240,189
+104,Rf,Rutherfórdio,7,Metais de Transição,Metal,Sólido,Não,Sim,999999.0,999999.0,5,Não,Instavel_Decaimento_Nuclear,Vapor Radioativo,188,240,172
+105,Db,Dúbnio,7,Metais de Transição,Metal,Sólido,Não,Sim,999999.0,999999.0,5,Não,Instavel_Decaimento_Nuclear,Vapor Radioativo,175,240,185
+106,Sg,Seabórgio,7,Metais de Transição,Metal,Sólido,Não,Sim,999999.0,999999.0,5,Não,Instavel_Decaimento_Nuclear,Vapor Radioativo,162,240,198
+107,Bh,Bóhrio,7,Metais de Transição,Metal,Sólido,Não,Sim,999999.0,999999.0,5,Não,Instavel_Decaimento_Nuclear,Vapor Radioativo,179,240,181
+108,Hs,Hássio,7,Metais de Transição,Metal,Sólido,Não,Sim,999999.0,999999.0,5,Não,Instavel_Decaimento_Nuclear,Vapor Radioativo,166,240,194
+109,Mt,Meitnério,7,Metais de Transição,Metal,Sólido,Não,Sim,999999.0,999999.0,5,Não,Instavel_Decaimento_Nuclear,Vapor Radioativo,183,240,177
+110,Ds,Darmstádtio,7,Metais de Transição,Metal,Sólido,Não,Sim,999999.0,999999.0,5,Não,Instavel_Decaimento_Nuclear,Vapor Radioativo,170,240,190
+111,Rg,Roentgênio,7,Metais de Transição,Metal,Sólido,Não,Sim,999999.0,999999.0,5,Não,Instavel_Decaimento_Nuclear,Vapor Radioativo,187,240,173
+112,Cn,Copernício,7,Metais de Transição,Metal,Sólido,Não,Sim,999999.0,999999.0,5,Não,Instavel_Decaimento_Nuclear,Vapor Radioativo,174,240,186
+113,Nh,Nihônio,7,Metais Pós-Transição,Metal,Sólido,Não,Sim,999999.0,999999.0,5,Não,Instavel_Decaimento_Nuclear,Vapor Radioativo,161,240,199
+114,Fl,Fleróvio,7,Metais Pós-Transição,Metal,Sólido,Não,Sim,999999.0,999999.0,5,Não,Instavel_Decaimento_Nuclear,Vapor Radioativo,178,240,182
+115,Mc,Moscóvio,7,Metais Pós-Transição,Metal,Sólido,Não,Sim,999999.0,999999.0,5,Não,Instavel_Decaimento_Nuclear,Vapor Radioativo,165,240,195
+116,Lv,Livermório,7,Metais Pós-Transição,Metal,Sólido,Não,Sim,999999.0,999999.0,5,Não,Instavel_Decaimento_Nuclear,Vapor Radioativo,182,240,178
+117,Ts,Tenessino,7,Halogênios,Não-metal,Sólido,Não,Sim,999999.0,999999.0,5,Não,Instavel_Decaimento_Nuclear,Vapor Radioativo,169,240,191
+118,Og,Oganessônio,7,Gases Nobres,Não-metal,Sólido,Não,Sim,999999.0,999999.0,10,Não,Instavel_Decaimento_Nuclear,Vapor Radioativo,186,240,174

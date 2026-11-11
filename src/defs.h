@@ -41,6 +41,7 @@ enum GameState {
     ESTADO_DIGITAR_NOME,
     ESTADO_CONFIGURACOES,
     ESTADO_RECORDES,
+    MENU_TABELA_PERIODICA,
     ESTADO_JOGANDO,
     ESTADO_PAUSADO
 };
@@ -90,7 +91,16 @@ enum ModoScanner {
 
 enum TipoProjetil { PROJETIL_AGUA, PROJETIL_FOGO, PROJETIL_NORMAL };
 enum TipoArma { ARMA_NENHUMA = -1, ARMA_MOP = 0, ARMA_SOPRADOR = 1 };
-enum TipoParticula { PARTICULA_GOTA = 0, PARTICULA_VAPOR = 1, PARTICULA_CALOR = 2 };
+enum TipoParticula { PARTICULA_GOTA = 0, PARTICULA_VAPOR = 1, PARTICULA_CALOR = 2, PARTICULA_EXPLOSAO = 3 };
+
+#define MAX_MARCAS_FULIGEM 16
+
+typedef struct {
+    bool ativo;
+    int sala;
+    float x, y;
+    int semente;
+} MarcaFuligem;
 
 typedef struct {
     float x, y;
@@ -100,6 +110,8 @@ typedef struct {
     int tipo;
     ALLEGRO_COLOR cor;
     float tamanho;
+    float largura;
+    float altura;
 } Particula;
 
 typedef struct {
@@ -156,6 +168,8 @@ typedef struct {
 
     bool possui_scanner;
     bool scanner_ativo;
+    float vel_x_knockback;
+    int timer_efeito_termico;
 } Jogador;
 
 typedef struct {
@@ -245,6 +259,12 @@ typedef struct {
     float ponto_fusao;
     float ponto_ebulicao;
     float pontos_de_vida_dureza;
+    char estavel_argonio[8];
+    char grupo_gameplay[32];
+    char reacao_agua[32];
+    int cor_r;
+    int cor_g;
+    int cor_b;
 } DadosElemento;
 
 extern DadosElemento tabela_periodica[MAX_ELEMENTOS + 1];
@@ -265,6 +285,11 @@ typedef struct {
 
     int numero_atomico;
 
+    float hp;
+    float hp_max;
+    bool morto;
+    bool ativo;
+
     float temperatura;
     float agua_atual;
     bool recebendo_calor;
@@ -275,6 +300,8 @@ typedef struct {
 
     ALLEGRO_BITMAP *sprites_normal[5];
     ALLEGRO_BITMAP *sprites_bre[5];
+    ALLEGRO_BITMAP *sprite_olho;
+    ALLEGRO_BITMAP *sprite_olho_m;
     int frame_atual;
     int tempo_animacao;
     int frame_animacao;

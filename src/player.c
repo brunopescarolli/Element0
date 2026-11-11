@@ -2,10 +2,11 @@
 #include "physics.h"
 #include "weapon.h"
 #include "elementos.h"
+#include "enemy.h"
 
 void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *arma_soprador,
                        Soprador *soprador, Coletavel *refil_agua, Coletavel *bateria, Coletavel *kit_medico,
-                       Coletavel *item_scanner,
+                       Coletavel *item_scanner, Coletavel *pilula_antirad,
                        Inimigo *anomalia, Plataforma *plataformas, int total_plat, Escada *escadas, int total_escadas,
                        Porta *portas, int total_portas, Projetil *projeteis, int max_proj,
                        Particula *particulas, int max_particulas,
@@ -13,6 +14,8 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *a
                        int *sala_atual, int *estado_fade, int *proxima_sala, float *proximo_x, float *proximo_chao_y) {
 
     if (*estado_fade != 0) return;
+
+    float limite_mapa_x = (*sala_atual == 0) ? (LARGURA_MAPA / 2.0f) : LARGURA_MAPA;
 
     if (faxineiro->morreu) {
         input->eixo_x = 0.0f;
@@ -26,6 +29,14 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *a
         faxineiro->esta_andando = false;
         faxineiro->frame_atual = 0;
         soprador->ativo = false;
+
+        if (fabsf(faxineiro->vel_x_knockback) > 0.01f) {
+            faxineiro->x += faxineiro->vel_x_knockback;
+            faxineiro->vel_x_knockback *= 0.86f;
+            if (fabsf(faxineiro->vel_x_knockback) < 0.05f) faxineiro->vel_x_knockback = 0.0f;
+            if (faxineiro->x - faxineiro->body_w / 2.0f < 0.0f) faxineiro->x = faxineiro->body_w / 2.0f;
+            if (faxineiro->x + faxineiro->body_w / 2.0f > limite_mapa_x) faxineiro->x = limite_mapa_x - faxineiro->body_w / 2.0f;
+        }
 
         faxineiro->vel_y += GRAVIDADE;
         faxineiro->y += faxineiro->vel_y;
@@ -45,6 +56,16 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *a
 
     if (faxineiro->timer_dano > 0) {
         faxineiro->timer_dano--;
+    }
+    if (faxineiro->timer_efeito_termico > 0) {
+        faxineiro->timer_efeito_termico--;
+        if (particulas != NULL && (faxineiro->timer_efeito_termico % 3 == 0)) {
+            float rx = (((float)(rand() % 100) / 100.0f) - 0.5f) * faxineiro->body_w;
+            float ry = ((float)(rand() % 100) / 100.0f) * faxineiro->body_h;
+            float px = faxineiro->x + rx;
+            float py = (faxineiro->y + (faxineiro->h / 2.0f)) - ry;
+            instanciar_particula(particulas, max_particulas, px, py, 0.0f, -0.8f, 16.0f, PARTICULA_CALOR, al_map_rgb(255, 110, 20), 4.0f);
+        }
     }
 
     // Verificar contato com escada vertical estilo marinheiro (direcao == 0)
@@ -114,7 +135,7 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *a
                 }
 
                 input->acao_entrar = false;
-                if (*sala_atual == anomalia->sala_origem) {
+                if (*sala_atual == anomalia->sala_origem && anomalia->ativo && !anomalia->morto) {
                     float abs_dist_x = fabs(faxineiro->x - anomalia->x);
                     float player_top = (faxineiro->y + faxineiro->h / 2.0) - faxineiro->body_h;
                     float player_bottom = faxineiro->y + faxineiro->h / 2.0;
@@ -133,17 +154,28 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *a
         }
     }
 
-    bool preso_na_poca = false;
-    if (*sala_atual == anomalia->sala_origem && anomalia->estado_atual == LIQUIDO) {
-        bool col_poca_x = (faxineiro->x + faxineiro->w / 2 > anomalia->x - anomalia->w / 2) && (faxineiro->x - faxineiro->w / 2 < anomalia->x + anomalia->w / 2);
-        bool col_poca_y = (faxineiro->y + faxineiro->h / 2 > anomalia->y - anomalia->h / 2) && (faxineiro->y - faxineiro->h / 2 < anomalia->y + anomalia->h / 2);
-        if (col_poca_x && col_poca_y) preso_na_poca = true;
+    bool em_areia_movedica = false;
+    if (*sala_atual == anomalia->sala_origem && anomalia->ativo &&
+        anomalia->frame_atual >= 1 && anomalia->frame_atual <= 3) {
+        float p_left_chk = faxineiro->x - faxineiro->body_w / 2.0f;
+        float p_right_chk = faxineiro->x + faxineiro->body_w / 2.0f;
+        float p_top_chk = (faxineiro->y + faxineiro->h / 2.0f) - faxineiro->body_h;
+        float p_bottom_chk = faxineiro->y + faxineiro->h / 2.0f;
+
+        bool col_visc_x = (p_right_chk > anomalia->x - anomalia->w / 2.0f) && (p_left_chk < anomalia->x + anomalia->w / 2.0f);
+        bool col_visc_y = (p_bottom_chk >= anomalia->y - anomalia->h / 2.0f - 2.0f) && (p_top_chk <= anomalia->y + anomalia->h / 2.0f);
+        if (col_visc_x && col_visc_y) {
+            em_areia_movedica = true;
+        }
     }
 
-    float velocidade_atual = preso_na_poca ? (faxineiro->velocidade * 0.4) : faxineiro->velocidade;
-    float vel_x_aplicada = input->eixo_x * velocidade_atual;
+    float velocidade_atual = em_areia_movedica ? (faxineiro->velocidade * 0.45f) : faxineiro->velocidade;
+    float vel_x_aplicada = input->eixo_x * velocidade_atual + faxineiro->vel_x_knockback;
+    if (fabsf(faxineiro->vel_x_knockback) > 0.01f) {
+        faxineiro->vel_x_knockback *= 0.86f;
+        if (fabsf(faxineiro->vel_x_knockback) < 0.05f) faxineiro->vel_x_knockback = 0.0f;
+    }
     float futuro_x = faxineiro->x + vel_x_aplicada;
-    float limite_mapa_x = (*sala_atual == 0) ? (LARGURA_MAPA / 2.0) : LARGURA_MAPA;
 
     if (faxineiro->escalando && indice_escada_vertical != -1) {
         Escada esc = escadas[indice_escada_vertical];
@@ -266,18 +298,21 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *a
         }
     }
 
-    // Colisão com Inimigo (Anomalia de Gálio)
-    if (*sala_atual == anomalia->sala_origem) {
+    // Colisão com Inimigo (Golem Termossensível)
+    if (*sala_atual == anomalia->sala_origem && anomalia->ativo) {
         float p_left = faxineiro->x - faxineiro->body_w / 2.0f;
         float p_right = faxineiro->x + faxineiro->body_w / 2.0f;
         float p_top = (faxineiro->y + faxineiro->h / 2.0f) - faxineiro->body_h;
         float p_bottom = faxineiro->y + faxineiro->h / 2.0f;
+        float pe_anterior = (faxineiro->y - faxineiro->vel_y) + faxineiro->h / 2.0f;
 
         bool colide_corpo_x = (p_right > anomalia->x - anomalia->w / 2.0f) && (p_left < anomalia->x + anomalia->w / 2.0f);
-        bool colide_corpo_y = (p_bottom > anomalia->y - anomalia->h / 2.0f) && (p_top < anomalia->y + anomalia->h / 2.0f);
+        bool colide_corpo_y = (p_bottom >= anomalia->y - anomalia->h / 2.0f - 1.0f) && (p_top <= anomalia->y + anomalia->h / 2.0f);
 
-        bool colide_inimigo_x = (faxineiro->x + faxineiro->w / 2 > anomalia->x - anomalia->w / 2) && (faxineiro->x - faxineiro->w / 2 < anomalia->x + anomalia->w / 2);
-        bool colide_inimigo_y = (faxineiro->y + faxineiro->h / 2 > anomalia->y - anomalia->h / 2) && (faxineiro->y - faxineiro->h / 2 < anomalia->y + anomalia->h / 2);
+        bool colide_inimigo_x = (faxineiro->x + faxineiro->w / 2.0f > anomalia->x - anomalia->w / 2.0f) &&
+                                (faxineiro->x - faxineiro->w / 2.0f < anomalia->x + anomalia->w / 2.0f);
+        bool colide_inimigo_y = (faxineiro->y + faxineiro->h / 2.0f >= anomalia->y - anomalia->h / 2.0f - 1.0f) &&
+                                (faxineiro->y - faxineiro->h / 2.0f <= anomalia->y + anomalia->h / 2.0f);
 
         if ((colide_inimigo_x && colide_inimigo_y) || (colide_corpo_x && colide_corpo_y)) {
             anomalia->recebendo_calor = true;
@@ -294,18 +329,96 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *a
             }
         }
 
-        if (colide_inimigo_x && colide_inimigo_y) {
-            float pe_anterior = (faxineiro->y - faxineiro->vel_y) + faxineiro->h / 2;
-            float topo_inimigo = anomalia->y - anomalia->h / 2;
-            if (!faxineiro->escalando && faxineiro->vel_y >= 0 && pe_anterior <= topo_inimigo + 0.1 && anomalia->estado_atual == SOLIDO) {
-                faxineiro->y = topo_inimigo - faxineiro->h / 2; faxineiro->vel_y = 0; faxineiro->no_chao = true;
+        if (anomalia->frame_atual == 0) {
+            // Estágio 1 (100% Sólido): Plataforma firme por cima; se morto, pode ser empurrado pelas laterais
+            float topo_inimigo = anomalia->y - anomalia->h / 2.0f;
+            bool sobre_topo_x = (p_right > anomalia->x - anomalia->w / 2.0f + 2.0f) &&
+                                (p_left < anomalia->x + anomalia->w / 2.0f - 2.0f);
+
+            if (!faxineiro->escalando && faxineiro->vel_y >= 0.0f && sobre_topo_x &&
+                pe_anterior <= topo_inimigo + 4.0f && p_bottom >= topo_inimigo - 1.0f) {
+                faxineiro->y = topo_inimigo - faxineiro->h / 2.0f;
+                faxineiro->vel_y = 0.0f;
+                faxineiro->no_chao = true;
+                anomalia->recebendo_calor = true;
+                anomalia->recebendo_calor_jogador = true;
+            } else if (anomalia->morto && colide_corpo_x && p_bottom > topo_inimigo + 4.0f && p_top < anomalia->y + anomalia->h / 2.0f) {
+                // Empurrar carcaça sólida horizontalmente
+                anomalia->recebendo_calor = true;
+                anomalia->recebendo_calor_jogador = true;
+                float empurrao = input->eixo_x * (faxineiro->velocidade * 0.65f);
+                if (input->eixo_x > 0.0f && faxineiro->x < anomalia->x) {
+                    float novo_inim_x = anomalia->x + empurrao;
+                    for (int e = 0; e < total_escadas; e++) {
+                        if (escadas[e].sala != *sala_atual || escadas[e].direcao == 0) continue;
+                        Escada esc = escadas[e];
+                        if (anomalia->y + anomalia->h / 2.0f > esc.y + 4.0f && anomalia->y - anomalia->h / 2.0f < esc.y + esc.h) {
+                            if (esc.direcao == -1 && novo_inim_x + anomalia->w / 2.0f > esc.x) {
+                                novo_inim_x = esc.x - anomalia->w / 2.0f;
+                            }
+                        }
+                    }
+                    if (novo_inim_x + anomalia->w / 2.0f > limite_mapa_x) {
+                        novo_inim_x = limite_mapa_x - anomalia->w / 2.0f;
+                    }
+                    anomalia->x = novo_inim_x;
+                    faxineiro->x = anomalia->x - anomalia->w / 2.0f - faxineiro->body_w / 2.0f;
+                } else if (input->eixo_x < 0.0f && faxineiro->x > anomalia->x) {
+                    float novo_inim_x = anomalia->x + empurrao;
+                    for (int e = 0; e < total_escadas; e++) {
+                        if (escadas[e].sala != *sala_atual || escadas[e].direcao == 0) continue;
+                        Escada esc = escadas[e];
+                        if (anomalia->y + anomalia->h / 2.0f > esc.y + 4.0f && anomalia->y - anomalia->h / 2.0f < esc.y + esc.h) {
+                            if (esc.direcao == 1 && novo_inim_x - anomalia->w / 2.0f < esc.x + esc.w) {
+                                novo_inim_x = esc.x + esc.w + anomalia->w / 2.0f;
+                            }
+                        }
+                    }
+                    if (novo_inim_x - anomalia->w / 2.0f < 0.0f) {
+                        novo_inim_x = anomalia->w / 2.0f;
+                    }
+                    anomalia->x = novo_inim_x;
+                    faxineiro->x = anomalia->x + anomalia->w / 2.0f + faxineiro->body_w / 2.0f;
+                } else {
+                    if (faxineiro->x < anomalia->x) {
+                        faxineiro->x = anomalia->x - anomalia->w / 2.0f - faxineiro->body_w / 2.0f;
+                    } else {
+                        faxineiro->x = anomalia->x + anomalia->w / 2.0f + faxineiro->body_w / 2.0f;
+                    }
+                }
+                if (faxineiro->x - faxineiro->body_w / 2.0f < 0.0f) faxineiro->x = faxineiro->body_w / 2.0f;
+                if (faxineiro->x + faxineiro->body_w / 2.0f > limite_mapa_x) faxineiro->x = limite_mapa_x - faxineiro->body_w / 2.0f;
+            }
+        } else if (anomalia->frame_atual >= 1 && anomalia->frame_atual <= 3) {
+            // Estágios 2, 3 e 4 (Viscoso / Areia Movediça): O topo afunda proporcionalmente ao progresso de fusão
+            DadosElemento dados_anom = tabela_periodica[anomalia->numero_atomico];
+            float denom_fusao = dados_anom.ponto_fusao - 20.0f;
+            if (denom_fusao <= 0.01f) denom_fusao = 0.01f;
+            float progresso_fusao = (anomalia->temperatura - 20.0f) / denom_fusao;
+            if (progresso_fusao < 0.0f) progresso_fusao = 0.0f;
+            if (progresso_fusao > 1.0f) progresso_fusao = 1.0f;
+
+            float afundamento = progresso_fusao * (anomalia->h * 0.65f);
+            float topo_efetivo = (anomalia->y - anomalia->h / 2.0f) + afundamento;
+            bool sobre_visc_x = (p_right > anomalia->x - anomalia->w / 2.0f + 2.0f) &&
+                                (p_left < anomalia->x + anomalia->w / 2.0f - 2.0f);
+
+            if (!faxineiro->escalando && faxineiro->vel_y >= 0.0f && sobre_visc_x &&
+                pe_anterior <= topo_efetivo + 5.0f && p_bottom >= topo_efetivo - 1.5f) {
+                faxineiro->y = topo_efetivo - faxineiro->h / 2.0f;
+                faxineiro->vel_y = 0.0f;
+                faxineiro->no_chao = true;
+                em_areia_movedica = true;
+                anomalia->recebendo_calor = true;
+                anomalia->recebendo_calor_jogador = true;
             }
         }
+        // Estágio 5 (frame_atual == 4, 100% Líquido): Poça no chão, atravessa livremente sem bloqueio
     }
 
     // Pulo (desativado enquanto estiver escalando)
     if (!faxineiro->escalando && input->pulo && faxineiro->no_chao) {
-        faxineiro->vel_y = preso_na_poca ? (FORCA_PULO * 0.7) : FORCA_PULO;
+        faxineiro->vel_y = em_areia_movedica ? (FORCA_PULO * 0.7f) : FORCA_PULO;
         faxineiro->no_chao = false;
     }
 
@@ -439,7 +552,7 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *a
                         particulas, max_particulas);
 
     // Hitbox de chamas do Soprador Térmico aquece a anomalia
-    if (soprador->ativo && *sala_atual == anomalia->sala_origem) {
+    if (soprador->ativo && *sala_atual == anomalia->sala_origem && anomalia->ativo) {
         bool chama_x = (soprador->x + soprador->w > anomalia->x - anomalia->w / 2.0f) &&
                        (soprador->x < anomalia->x + anomalia->w / 2.0f);
         bool chama_y = (soprador->y + soprador->h > anomalia->y - anomalia->h / 2.0f) &&
@@ -450,7 +563,7 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *a
         }
     }
 
-    // Coleta de itens consumíveis (refil_agua, bateria e kit_medico)
+    // Coleta de itens consumíveis (refil_agua, bateria, kit_medico, scanner, pilula_antirad)
     float player_left = faxineiro->x - faxineiro->body_w / 2.0f;
     float player_right = faxineiro->x + faxineiro->body_w / 2.0f;
     float player_top = (faxineiro->y + faxineiro->h / 2.0f) - faxineiro->body_h;
@@ -480,12 +593,14 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *a
         bool col_kit = (player_right > kit_medico->x) && (player_left < kit_medico->x + kit_medico->w) &&
                        (player_bottom > kit_medico->y) && (player_top < kit_medico->y + kit_medico->h);
         if (col_kit) {
-            float cura = 100.0f - faxineiro->barra_vida;
+            float teto_vida = 100.0f - faxineiro->barra_radio;
+            if (teto_vida < 0.0f) teto_vida = 0.0f;
+            float cura = teto_vida - faxineiro->barra_vida;
             if (cura < 0.0f) cura = 0.0f;
             char buffer[32];
             sprintf(buffer, "+%.0f", cura);
             instanciar_texto_flutuante(textos, max_textos, faxineiro->x, player_top - 10.0f, buffer, al_map_rgb(0, 255, 0));
-            faxineiro->barra_vida = 100.0f;
+            faxineiro->barra_vida = teto_vida;
             kit_medico->ativo = false;
         }
     }
@@ -500,11 +615,38 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *a
         }
     }
 
-    // Radiação se houver elemento radioativo na sala
-    if (*sala_atual == anomalia->sala_origem && tabela_periodica[anomalia->numero_atomico].radioativo) {
-        if (fabs(faxineiro->x - anomalia->x) <= anomalia->raio_visao) {
-            faxineiro->barra_radio += (10.0f / FPS);
+    if (pilula_antirad && pilula_antirad->ativo && pilula_antirad->sala == *sala_atual) {
+        bool col_rad = (player_right > pilula_antirad->x) && (player_left < pilula_antirad->x + pilula_antirad->w) &&
+                        (player_bottom > pilula_antirad->y) && (player_top < pilula_antirad->y + pilula_antirad->h);
+        if (col_rad) {
+            float reducao = 0.0f;
+            if (faxineiro->barra_radio > 0.0f) {
+                reducao = (faxineiro->barra_radio < 25.0f) ? faxineiro->barra_radio : 25.0f;
+                faxineiro->barra_radio -= reducao;
+                if (faxineiro->barra_radio < 0.0f) faxineiro->barra_radio = 0.0f;
+            }
+            char texto[32];
+            sprintf(texto, "-%.0f RAD", reducao);
+            instanciar_texto_flutuante(textos, max_textos, faxineiro->x, player_top - 10.0f, texto, al_map_rgb(39, 220, 60));
+            pilula_antirad->ativo = false;
+        }
+    }
+
+    // Aura de Radiação (raio 85.0f px) para qualquer inimigo ativo (vivo ou morto) com Radioativo == true
+    if (*sala_atual == anomalia->sala_origem && anomalia->ativo && tabela_periodica[anomalia->numero_atomico].radioativo) {
+        float p_centro_x = faxineiro->x;
+        float p_centro_y = (faxineiro->y + faxineiro->h / 2.0f) - (faxineiro->body_h / 2.0f);
+        float dx_rad = p_centro_x - anomalia->x;
+        float dy_rad = p_centro_y - anomalia->y;
+        float dist_rad = sqrtf(dx_rad * dx_rad + dy_rad * dy_rad);
+        if (dist_rad <= 85.0f) {
+            faxineiro->barra_radio += (1.0f / (float)FPS);
             if (faxineiro->barra_radio > 100.0f) faxineiro->barra_radio = 100.0f;
+            float teto_vida = 100.0f - faxineiro->barra_radio;
+            if (teto_vida < 0.0f) teto_vida = 0.0f;
+            if (faxineiro->barra_vida > teto_vida) {
+                faxineiro->barra_vida = teto_vida;
+            }
         }
     }
 

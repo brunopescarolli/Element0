@@ -17,6 +17,45 @@ static ALLEGRO_BITMAP *carregar_sprite_seguro(const char *caminho) {
     return sprite;
 }
 
+static void sortear_e_configurar_anomalia_fase1(Inimigo *anomalia) {
+    int z = sortear_elemento_por_grupo("Metal_Termossensivel_Fase1");
+    if (z < 0 || z > MAX_ELEMENTOS) {
+        printf("ERRO [sortear_e_configurar_anomalia_fase1]: Falha ao sortear 'Metal_Termossensivel_Fase1'!\n");
+        anomalia->ativo = false;
+        return;
+    }
+    DadosElemento elem = tabela_periodica[z];
+    printf("[Sorteio Fase 1] Elemento sorteado: %s (%s, Z=%d, Fusao=%.1f C, Reacao_Agua=%s)\n",
+           elem.nome, elem.simbolo, z, elem.ponto_fusao, elem.reacao_agua);
+
+    anomalia->x = 100.0f;
+    anomalia->y = 254.0f - (30.0f / 2.0f);
+    anomalia->vel_y = 0.0f;
+    anomalia->vel_x_atual = 0.0f;
+    anomalia->no_chao = true;
+    anomalia->sala_origem = 1;
+    anomalia->alvo_x = 0.0f;
+    anomalia->numero_atomico = z;
+    anomalia->temperatura = TEMP_ESTACAO;
+    anomalia->agua_atual = 0.0f;
+    anomalia->recebendo_calor = false;
+    anomalia->recebendo_calor_jogador = false;
+    anomalia->recebendo_calor_soprador = false;
+    anomalia->hp_max = (elem.pontos_de_vida_dureza > 0.0f) ? elem.pontos_de_vida_dureza : 80.0f;
+    anomalia->hp = anomalia->hp_max;
+    anomalia->morto = false;
+    anomalia->ativo = true;
+    anomalia->estado_atual = SOLIDO;
+    anomalia->cor = al_map_rgb(elem.cor_r, elem.cor_g, elem.cor_b);
+    anomalia->frame_atual = 0;
+    anomalia->tempo_animacao = 0;
+    anomalia->frame_animacao = 0;
+    anomalia->direcao_atual = DIR_DIREITA;
+    anomalia->timer_resfriamento = 0;
+    anomalia->timer_agro = 0;
+    anomalia->timer_patrulha = 0;
+}
+
 static void reiniciar_campanha(Game *game) {
     game->sala_atual = 0;
     game->estado_fade = 0;
@@ -33,6 +72,7 @@ static void reiniciar_campanha(Game *game) {
     game->faxineiro.x = 32.0f;
     game->faxineiro.y = 127.0f - (game->faxineiro.h / 2.0f);
     game->faxineiro.vel_y = 0.0f;
+    game->faxineiro.vel_x_knockback = 0.0f;
     game->faxineiro.no_chao = true;
     game->faxineiro.direcao_atual = DIR_DIREITA;
     game->faxineiro.esta_andando = false;
@@ -55,6 +95,7 @@ static void reiniciar_campanha(Game *game) {
     game->faxineiro.possui_scanner = false;
     game->faxineiro.scanner_ativo = false;
     game->faxineiro.timer_dano = 0;
+    game->faxineiro.timer_efeito_termico = 0;
     game->faxineiro.morreu = false;
 
     game->arma_mop.sala_origem = 0;
@@ -74,40 +115,26 @@ static void reiniciar_campanha(Game *game) {
     game->bateria = (Coletavel){ 120.0f, 115.0f, 12.0f, 12.0f, 0, true };
     game->kit_medico = (Coletavel){ 140.0f, 115.0f, 12.0f, 12.0f, 0, true };
     game->item_scanner = (Coletavel){ 160.0f, 115.0f, 12.0f, 12.0f, 0, true };
+    game->pilula_antirad = (Coletavel){ 215.0f, 115.0f, 12.0f, 12.0f, 0, true };
 
     game->modo_scanner = SCANNER_FECHADO;
-    for (int i = 0; i <= MAX_ELEMENTOS; i++) game->elemento_descoberto[i] = false;
+    for (int i = 0; i <= MAX_ELEMENTOS; i++) {
+        game->descoberto_run[i] = false;
+    }
     game->tempo_scan = 0.0f;
     game->elemento_foco_id = 0;
 
-    game->anomalia.x = 100.0f;
-    game->anomalia.y = 254.0f - (30.0f / 2.0f);
-    game->anomalia.vel_y = 0.0f;
-    game->anomalia.vel_x_atual = 0.0f;
-    game->anomalia.no_chao = true;
-    game->anomalia.sala_origem = 1;
-    game->anomalia.alvo_x = 0.0f;
-    game->anomalia.temperatura = TEMP_ESTACAO;
-    game->anomalia.agua_atual = 0.0f;
-    game->anomalia.recebendo_calor = false;
-    game->anomalia.recebendo_calor_jogador = false;
-    game->anomalia.recebendo_calor_soprador = false;
-    game->anomalia.estado_atual = SOLIDO;
-    game->anomalia.frame_atual = 0;
-    game->anomalia.tempo_animacao = 0;
-    game->anomalia.frame_animacao = 0;
-    game->anomalia.direcao_atual = DIR_DIREITA;
-    game->anomalia.timer_resfriamento = 0;
-    game->anomalia.timer_agro = 0;
-    game->anomalia.timer_patrulha = 0;
+    sortear_e_configurar_anomalia_fase1(&game->anomalia);
 
     for (int i = 0; i < MAX_PROJETEIS; i++) game->projeteis[i].ativo = false;
     for (int p = 0; p < MAX_PARTICULAS; p++) game->particulas[p].vida = 0.0f;
+    for (int m = 0; m < MAX_MARCAS_FULIGEM; m++) game->marcas_fuligem[m].ativo = false;
     for (int t = 0; t < MAX_TEXTOS_FLUTUANTES; t++) game->textos_flutuantes[t].ativo = false;
 
     salvar_jogo(game->nome_jogador, game->sala_atual, &game->faxineiro,
                 &game->arma_mop, &game->arma_soprador,
-                &game->refil_agua, &game->bateria, &game->kit_medico);
+                &game->refil_agua, &game->bateria, &game->kit_medico,
+                &game->anomalia);
     game->estado_jogo = ESTADO_JOGANDO;
 }
 
@@ -163,6 +190,7 @@ bool game_init(Game *game) {
     game->faxineiro.body_h = 52.0;
     game->faxineiro.velocidade = 2.5;
     game->faxineiro.vel_y = 0.0;
+    game->faxineiro.vel_x_knockback = 0.0f;
     game->faxineiro.no_chao = true;
     game->faxineiro.direcao_atual = DIR_DIREITA;
     game->faxineiro.frame_atual = 0;
@@ -186,6 +214,7 @@ bool game_init(Game *game) {
     game->faxineiro.possui_scanner = false;
     game->faxineiro.scanner_ativo = false;
     game->faxineiro.timer_dano = 0;
+    game->faxineiro.timer_efeito_termico = 0;
     game->faxineiro.morreu = false;
 
     game->faxineiro.sprites[FRAME_IDLE]  = al_load_bitmap("assets/sprites/front_idle.png");
@@ -408,6 +437,7 @@ bool game_init(Game *game) {
     game->sprites.sprite_hud_bateria = carregar_sprite_seguro("assets/sprites/barra_bateria.png");
     game->sprites.sprite_hud_caveira = carregar_sprite_seguro("assets/sprites/caveira_radiacao.png");
     game->sprites.sprite_scanner = carregar_sprite_seguro("assets/sprites/scanner.png");
+    game->sprites.sprite_anti_radiacao = carregar_sprite_seguro("assets/sprites/anti-radiacao.png");
 
     game->arma_soprador = (Item){ 80.0f, 127.0f, 0.0f, 30.0f, true, 0, game->sprites.sprite_soprador };
     game->soprador = (Soprador){ 0.0f, 0.0f, 34.0f, 16.0f, false };
@@ -415,37 +445,57 @@ bool game_init(Game *game) {
     game->bateria = (Coletavel){ 120.0f, 115.0f, 12.0f, 12.0f, 0, true };
     game->kit_medico = (Coletavel){ 140.0f, 115.0f, 12.0f, 12.0f, 0, true };
     game->item_scanner = (Coletavel){ 160.0f, 115.0f, 12.0f, 12.0f, 0, true };
+    game->pilula_antirad = (Coletavel){ 215.0f, 115.0f, 12.0f, 12.0f, 0, true };
 
     game->modo_scanner = SCANNER_FECHADO;
-    for (int i = 0; i <= MAX_ELEMENTOS; i++) game->elemento_descoberto[i] = false;
+    for (int i = 0; i <= MAX_ELEMENTOS; i++) {
+        game->descoberto_run[i] = false;
+    }
+    carregar_progresso_tabela(game->descoberto_global, game->descobridor_global, game->novo_na_tabela);
     game->tempo_scan = 0.0f;
     game->elemento_foco_id = 0;
+    game->elemento_tabela_selecionado = 1;
+    game->timer_anim_tabela = 0;
+    game->frame_anim_tabela = 0;
+    game->mostrar_botao_reset_tabela = false;
 
-    game->anomalia = (Inimigo){
-        100, 254.0 - (30.0 / 2.0), 40.0, 30.0,
-        0.5, 0.0, 0.0, true,
-        1, 0.0,
-        180.0,
-        31,
-        TEMP_ESTACAO, 0.0f, false, false, false, SOLIDO, al_map_rgb(210, 210, 220),
-        {NULL, NULL, NULL, NULL, NULL},
-        {NULL, NULL, NULL, NULL, NULL},
-        0, 0, 0,
-        DIR_DIREITA, 0,
-        0, 0
-    };
+    memset(&game->anomalia, 0, sizeof(Inimigo));
+    game->anomalia.w = 40.0f;
+    game->anomalia.h = 30.0f;
+    game->anomalia.velocidade = 0.5f;
+    game->anomalia.raio_visao = 180.0f;
+    sortear_e_configurar_anomalia_fase1(&game->anomalia);
 
     for (int i = 0; i < 5; i++) {
-        char path[64];
-        sprintf(path, "assets/sprites/galio_%d.png", i + 1);
+        char path[96];
+        snprintf(path, sizeof(path), "assets/sprites/golem_termossensivel_%d.png", i + 1);
         game->anomalia.sprites_normal[i] = al_load_bitmap(path);
+        if (!game->anomalia.sprites_normal[i]) {
+            snprintf(path, sizeof(path), "../assets/sprites/golem_termossensivel_%d.png", i + 1);
+            game->anomalia.sprites_normal[i] = al_load_bitmap(path);
+        }
+        if (!game->anomalia.sprites_normal[i]) {
+            snprintf(path, sizeof(path), "assets/sprites/galio_%d.png", i + 1);
+            game->anomalia.sprites_normal[i] = carregar_sprite_seguro(path);
+        }
 
-        sprintf(path, "assets/sprites/galio_%d_bre.png", i + 1);
+        snprintf(path, sizeof(path), "assets/sprites/golem_termossensivel_%d_bre.png", i + 1);
         game->anomalia.sprites_bre[i] = al_load_bitmap(path);
+        if (!game->anomalia.sprites_bre[i]) {
+            snprintf(path, sizeof(path), "../assets/sprites/golem_termossensivel_%d_bre.png", i + 1);
+            game->anomalia.sprites_bre[i] = al_load_bitmap(path);
+        }
+        if (!game->anomalia.sprites_bre[i]) {
+            snprintf(path, sizeof(path), "assets/sprites/galio_%d_bre.png", i + 1);
+            game->anomalia.sprites_bre[i] = carregar_sprite_seguro(path);
+        }
     }
+    game->anomalia.sprite_olho = carregar_sprite_seguro("assets/sprites/olho.png");
+    game->anomalia.sprite_olho_m = carregar_sprite_seguro("assets/sprites/olho_m.png");
 
     for (int i = 0; i < MAX_PROJETEIS; i++) game->projeteis[i].ativo = false;
     for (int p = 0; p < MAX_PARTICULAS; p++) game->particulas[p].vida = 0.0f;
+    for (int m = 0; m < MAX_MARCAS_FULIGEM; m++) game->marcas_fuligem[m].ativo = false;
 
     game->timer = al_create_timer(1.0 / FPS);
     game->fila_eventos = al_create_event_queue();
@@ -490,7 +540,8 @@ void game_run(Game *game) {
             if ((game->estado_jogo == ESTADO_JOGANDO || game->estado_jogo == ESTADO_PAUSADO) && !game->faxineiro.morreu) {
                 salvar_jogo(game->nome_jogador, game->sala_atual, &game->faxineiro,
                             &game->arma_mop, &game->arma_soprador,
-                            &game->refil_agua, &game->bateria, &game->kit_medico);
+                            &game->refil_agua, &game->bateria, &game->kit_medico,
+                            &game->anomalia);
             }
             game->rodando = false;
         }
@@ -532,13 +583,13 @@ void game_run(Game *game) {
                 if (f_nav) { save_existe = true; fclose(f_nav); }
 
                 if (evento.keyboard.keycode == ALLEGRO_KEY_DOWN || evento.keyboard.keycode == ALLEGRO_KEY_S) {
-                    game->opcao_menu = (game->opcao_menu + 1) % 4;
+                    game->opcao_menu = (game->opcao_menu + 1) % 5;
                     if (game->opcao_menu == 1 && !save_existe) {
                         game->opcao_menu = 2;
                     }
                 }
                 else if (evento.keyboard.keycode == ALLEGRO_KEY_UP || evento.keyboard.keycode == ALLEGRO_KEY_W) {
-                    game->opcao_menu = (game->opcao_menu - 1 + 4) % 4;
+                    game->opcao_menu = (game->opcao_menu - 1 + 5) % 5;
                     if (game->opcao_menu == 1 && !save_existe) {
                         game->opcao_menu = 0;
                     }
@@ -560,7 +611,9 @@ void game_run(Game *game) {
                             fclose(f_chk);
                             if (carregar_jogo(game->nome_jogador, &game->sala_atual, &game->faxineiro,
                                               &game->arma_mop, &game->arma_soprador,
-                                              &game->refil_agua, &game->bateria, &game->kit_medico)) {
+                                              &game->refil_agua, &game->bateria, &game->kit_medico,
+                                              &game->anomalia)) {
+                                game->pilula_antirad = (Coletavel){ 215.0f, 115.0f, 12.0f, 12.0f, 0, true };
                                 game->soprador.ativo = false;
                                 game->alpha_game_over = 0.0f;
                                 game->opcao_game_over = 0;
@@ -571,11 +624,39 @@ void game_run(Game *game) {
                             }
                         }
                     } else if (game->opcao_menu == 2) {
-                        game->estado_jogo = ESTADO_RECORDES;
+                        game->elemento_tabela_selecionado = tabela_periodica_primeiro_descoberto(game->descoberto_global);
+                        game->timer_anim_tabela = 0;
+                        game->frame_anim_tabela = 0;
+                        game->mostrar_botao_reset_tabela = false;
+                        game->estado_jogo = MENU_TABELA_PERIODICA;
                     } else if (game->opcao_menu == 3) {
+                        game->estado_jogo = ESTADO_RECORDES;
+                    } else if (game->opcao_menu == 4) {
                         game->estado_jogo = ESTADO_CONFIGURACOES;
                         game->opcao_config = 0;
                     }
+                }
+            }
+            else if (game->estado_jogo == MENU_TABELA_PERIODICA) {
+                ALLEGRO_KEYBOARD_STATE kbd;
+                al_get_keyboard_state(&kbd);
+                if (al_key_down(&kbd, ALLEGRO_KEY_F3) && al_key_down(&kbd, ALLEGRO_KEY_B)) {
+                    game->mostrar_botao_reset_tabela = true;
+                }
+
+                if (evento.keyboard.keycode == ALLEGRO_KEY_ESCAPE || evento.keyboard.keycode == ALLEGRO_KEY_BACKSPACE) {
+                    game->mostrar_botao_reset_tabela = false;
+                    memset(game->novo_na_tabela, 0, sizeof(game->novo_na_tabela));
+                    salvar_progresso_tabela(game->descoberto_global, game->descobridor_global, game->novo_na_tabela);
+                    game->estado_jogo = ESTADO_MENU_PRINCIPAL;
+                } else if (evento.keyboard.keycode == ALLEGRO_KEY_W || evento.keyboard.keycode == ALLEGRO_KEY_UP) {
+                    game->elemento_tabela_selecionado = tabela_periodica_navegar(game->elemento_tabela_selecionado, 0, -1);
+                } else if (evento.keyboard.keycode == ALLEGRO_KEY_S || evento.keyboard.keycode == ALLEGRO_KEY_DOWN) {
+                    game->elemento_tabela_selecionado = tabela_periodica_navegar(game->elemento_tabela_selecionado, 0, 1);
+                } else if (evento.keyboard.keycode == ALLEGRO_KEY_A || evento.keyboard.keycode == ALLEGRO_KEY_LEFT) {
+                    game->elemento_tabela_selecionado = tabela_periodica_navegar(game->elemento_tabela_selecionado, -1, 0);
+                } else if (evento.keyboard.keycode == ALLEGRO_KEY_D || evento.keyboard.keycode == ALLEGRO_KEY_RIGHT) {
+                    game->elemento_tabela_selecionado = tabela_periodica_navegar(game->elemento_tabela_selecionado, 1, 0);
                 }
             }
             else if (game->estado_jogo == ESTADO_CONFIRMAR_NOVO_JOGO) {
@@ -639,7 +720,8 @@ void game_run(Game *game) {
                     if (evento.keyboard.keycode == ALLEGRO_KEY_ESCAPE) {
                         salvar_jogo(game->nome_jogador, game->sala_atual, &game->faxineiro,
                                     &game->arma_mop, &game->arma_soprador,
-                                    &game->refil_agua, &game->bateria, &game->kit_medico);
+                                    &game->refil_agua, &game->bateria, &game->kit_medico,
+                                    &game->anomalia);
                         game->estado_jogo = ESTADO_PAUSADO;
                         game->opcao_pause = 0;
                     }
@@ -670,9 +752,9 @@ void game_run(Game *game) {
                             if (game->faxineiro.scanner_ativo) {
                                 bool tem_inimigo_desconhecido = false;
                                 int inimigo_id = 0;
-                                if (game->anomalia.sala_origem == game->sala_atual && game->anomalia.numero_atomico > 0) {
+                                if (game->anomalia.ativo && game->anomalia.sala_origem == game->sala_atual && game->anomalia.numero_atomico > 0) {
                                     inimigo_id = game->anomalia.numero_atomico;
-                                    if (!game->elemento_descoberto[inimigo_id]) {
+                                    if (!game->descoberto_run[inimigo_id]) {
                                         tem_inimigo_desconhecido = true;
                                     }
                                 }
@@ -707,12 +789,14 @@ void game_run(Game *game) {
                     } else if (game->opcao_pause == 1) {
                         salvar_jogo(game->nome_jogador, game->sala_atual, &game->faxineiro,
                                     &game->arma_mop, &game->arma_soprador,
-                                    &game->refil_agua, &game->bateria, &game->kit_medico);
+                                    &game->refil_agua, &game->bateria, &game->kit_medico,
+                                    &game->anomalia);
                         game->estado_jogo = ESTADO_MENU_PRINCIPAL;
                     } else if (game->opcao_pause == 2) {
                         salvar_jogo(game->nome_jogador, game->sala_atual, &game->faxineiro,
                                     &game->arma_mop, &game->arma_soprador,
-                                    &game->refil_agua, &game->bateria, &game->kit_medico);
+                                    &game->refil_agua, &game->bateria, &game->kit_medico,
+                                    &game->anomalia);
                         game->rodando = false;
                     }
                 }
@@ -768,7 +852,7 @@ void game_run(Game *game) {
                 bool save_existe = false;
                 FILE *f_hover = fopen("save.dat", "rb");
                 if (f_hover) { save_existe = true; fclose(f_hover); }
-                for (int i = 0; i < 4; i++) {
+                for (int i = 0; i < 5; i++) {
                     if (i == 1 && !save_existe) continue;
                     float item_y = 90 + (i * 25);
                     if (mapa_mouse_x >= 100 && mapa_mouse_x <= 380 && mapa_mouse_y >= item_y && mapa_mouse_y <= item_y + 20) {
@@ -776,6 +860,13 @@ void game_run(Game *game) {
                         sobre_elemento = true;
                         break;
                     }
+                }
+            }
+            else if (game->estado_jogo == MENU_TABELA_PERIODICA) {
+                if (tabela_periodica_clique_voltar(mapa_mouse_x, mapa_mouse_y) ||
+                    tabela_periodica_clique_reset(mapa_mouse_x, mapa_mouse_y, game->mostrar_botao_reset_tabela) ||
+                    tabela_periodica_obter_elemento_clicado(mapa_mouse_x, mapa_mouse_y) >= 0) {
+                    sobre_elemento = true;
                 }
             }
             else if (game->estado_jogo == ESTADO_CONFIRMAR_NOVO_JOGO) {
@@ -813,7 +904,7 @@ void game_run(Game *game) {
                            scanner_clique_botao_voltar(mapa_mouse_x, mapa_mouse_y)) {
                     sobre_elemento = true;
                 } else if (game->modo_scanner == SCANNER_MENU &&
-                           scanner_obter_item_clicado_menu(mapa_mouse_x, mapa_mouse_y, game->elemento_descoberto) > 0) {
+                           scanner_obter_item_clicado_menu(mapa_mouse_x, mapa_mouse_y, game->descoberto_run) > 0) {
                     sobre_elemento = true;
                 }
             }
@@ -852,7 +943,7 @@ void game_run(Game *game) {
                     if (game->modo_scanner != SCANNER_FECHADO) {
                         clique_no_scanner = scanner_processar_clique_mouse(
                             &game->modo_scanner, &game->faxineiro.scanner_ativo,
-                            &game->elemento_foco_id, game->elemento_descoberto,
+                            &game->elemento_foco_id, game->descoberto_run,
                             mapa_mouse_x, mapa_mouse_y
                         );
                     }
@@ -865,7 +956,7 @@ void game_run(Game *game) {
                 bool save_existe = false;
                 FILE *f_click = fopen("save.dat", "rb");
                 if (f_click) { save_existe = true; fclose(f_click); }
-                for (int i = 0; i < 4; i++) {
+                for (int i = 0; i < 5; i++) {
                     if (i == 1 && !save_existe) continue;
                     float item_y = 90 + (i * 25);
                     if (mapa_mouse_x >= 100 && mapa_mouse_x <= 380 && mapa_mouse_y >= item_y && mapa_mouse_y <= item_y + 20) {
@@ -886,7 +977,9 @@ void game_run(Game *game) {
                                 fclose(f_chk);
                                 if (carregar_jogo(game->nome_jogador, &game->sala_atual, &game->faxineiro,
                                                   &game->arma_mop, &game->arma_soprador,
-                                                  &game->refil_agua, &game->bateria, &game->kit_medico)) {
+                                                  &game->refil_agua, &game->bateria, &game->kit_medico,
+                                                  &game->anomalia)) {
+                                    game->pilula_antirad = (Coletavel){ 215.0f, 115.0f, 12.0f, 12.0f, 0, true };
                                     game->soprador.ativo = false;
                                     game->alpha_game_over = 0.0f;
                                     game->opcao_game_over = 0;
@@ -897,12 +990,41 @@ void game_run(Game *game) {
                                 }
                             }
                         } else if (game->opcao_menu == 2) {
-                            game->estado_jogo = ESTADO_RECORDES;
+                            game->elemento_tabela_selecionado = tabela_periodica_primeiro_descoberto(game->descoberto_global);
+                            game->timer_anim_tabela = 0;
+                            game->frame_anim_tabela = 0;
+                            game->mostrar_botao_reset_tabela = false;
+                            game->estado_jogo = MENU_TABELA_PERIODICA;
                         } else if (game->opcao_menu == 3) {
+                            game->estado_jogo = ESTADO_RECORDES;
+                        } else if (game->opcao_menu == 4) {
                             game->estado_jogo = ESTADO_CONFIGURACOES;
                             game->opcao_config = 0;
                         }
                         break;
+                    }
+                }
+            }
+            else if (game->estado_jogo == MENU_TABELA_PERIODICA && evento.mouse.button == 1) {
+                if (tabela_periodica_clique_voltar(mapa_mouse_x, mapa_mouse_y)) {
+                    game->mostrar_botao_reset_tabela = false;
+                    memset(game->novo_na_tabela, 0, sizeof(game->novo_na_tabela));
+                    salvar_progresso_tabela(game->descoberto_global, game->descobridor_global, game->novo_na_tabela);
+                    game->estado_jogo = ESTADO_MENU_PRINCIPAL;
+                } else if (tabela_periodica_clique_reset(mapa_mouse_x, mapa_mouse_y, game->mostrar_botao_reset_tabela)) {
+                    for (int i = 0; i <= MAX_ELEMENTOS; i++) {
+                        game->descoberto_global[i] = false;
+                        game->novo_na_tabela[i] = false;
+                        game->descobridor_global[i][0] = '\0';
+                        game->descoberto_run[i] = false;
+                    }
+                    salvar_progresso_tabela(game->descoberto_global, game->descobridor_global, game->novo_na_tabela);
+                    game->elemento_tabela_selecionado = 1;
+                    printf("[Tabela Periodica] Banco quimico resetado com sucesso!\n");
+                } else {
+                    int z_clicado = tabela_periodica_obter_elemento_clicado(mapa_mouse_x, mapa_mouse_y);
+                    if (z_clicado >= 0 && z_clicado <= MAX_ELEMENTOS) {
+                        game->elemento_tabela_selecionado = z_clicado;
                     }
                 }
             }
@@ -947,12 +1069,14 @@ void game_run(Game *game) {
                         } else if (game->opcao_pause == 1) {
                             salvar_jogo(game->nome_jogador, game->sala_atual, &game->faxineiro,
                                         &game->arma_mop, &game->arma_soprador,
-                                        &game->refil_agua, &game->bateria, &game->kit_medico);
+                                        &game->refil_agua, &game->bateria, &game->kit_medico,
+                                        &game->anomalia);
                             game->estado_jogo = ESTADO_MENU_PRINCIPAL;
                         } else if (game->opcao_pause == 2) {
                             salvar_jogo(game->nome_jogador, game->sala_atual, &game->faxineiro,
                                         &game->arma_mop, &game->arma_soprador,
-                                        &game->refil_agua, &game->bateria, &game->kit_medico);
+                                        &game->refil_agua, &game->bateria, &game->kit_medico,
+                                        &game->anomalia);
                             game->rodando = false;
                         }
                         break;
@@ -966,6 +1090,24 @@ void game_run(Game *game) {
         }
         else if (evento.type == ALLEGRO_EVENT_TIMER) {
             game->redesenhar = true;
+
+            if (game->estado_jogo != ESTADO_JOGANDO) {
+                (void)rand();
+            }
+
+            if (game->estado_jogo == MENU_TABELA_PERIODICA) {
+                ALLEGRO_KEYBOARD_STATE kbd;
+                al_get_keyboard_state(&kbd);
+                if (al_key_down(&kbd, ALLEGRO_KEY_F3) && al_key_down(&kbd, ALLEGRO_KEY_B)) {
+                    game->mostrar_botao_reset_tabela = true;
+                }
+
+                game->timer_anim_tabela++;
+                if (game->timer_anim_tabela >= 20) {
+                    game->timer_anim_tabela = 0;
+                    game->frame_anim_tabela = (game->frame_anim_tabela == 0) ? 1 : 0;
+                }
+            }
 
             if (game->estado_jogo == ESTADO_JOGANDO) {
                 game->anomalia.recebendo_calor = false;
@@ -1009,7 +1151,8 @@ void game_run(Game *game) {
                         if (!game->faxineiro.morreu) {
                             salvar_jogo(game->nome_jogador, game->sala_atual, &game->faxineiro,
                                         &game->arma_mop, &game->arma_soprador,
-                                        &game->refil_agua, &game->bateria, &game->kit_medico);
+                                        &game->refil_agua, &game->bateria, &game->kit_medico,
+                                        &game->anomalia);
                         }
                     }
                     if (game->timer_fade >= 60) game->estado_fade = 3;
@@ -1052,7 +1195,16 @@ void game_run(Game *game) {
                     if (game->tempo_scan <= 0.0f) {
                         game->tempo_scan = 0.0f;
                         if (game->elemento_foco_id > 0 && game->elemento_foco_id <= MAX_ELEMENTOS) {
-                            game->elemento_descoberto[game->elemento_foco_id] = true;
+                            int z = game->elemento_foco_id;
+                            game->descoberto_run[z] = true;
+                            if (!game->descoberto_global[z]) {
+                                game->descoberto_global[z] = true;
+                                game->novo_na_tabela[z] = true;
+                                const char *descobridor = (game->nome_jogador[0] != '\0') ? game->nome_jogador : "Faxineiro";
+                                strncpy(game->descobridor_global[z], descobridor, sizeof(game->descobridor_global[z]) - 1);
+                                game->descobridor_global[z][sizeof(game->descobridor_global[z]) - 1] = '\0';
+                                salvar_progresso_tabela(game->descoberto_global, game->descobridor_global, game->novo_na_tabela);
+                            }
                         }
                         game->modo_scanner = SCANNER_DETALHES;
                     }
@@ -1065,7 +1217,7 @@ void game_run(Game *game) {
 
                 atualizar_jogador(&game->faxineiro, &game->input, &game->arma_mop, &game->arma_soprador,
                                   &game->soprador, &game->refil_agua, &game->bateria, &game->kit_medico,
-                                  &game->item_scanner,
+                                  &game->item_scanner, &game->pilula_antirad,
                                   &game->anomalia, game->mundo_plataformas, TOTAL_PLATAFORMAS,
                                   game->mundo_escadas, TOTAL_ESCADAS, game->mundo_portas, TOTAL_PORTAS,
                                   game->projeteis, MAX_PROJETEIS, game->particulas, MAX_PARTICULAS,
@@ -1127,7 +1279,9 @@ void game_run(Game *game) {
                 atualizar_inimigo(&game->anomalia, &game->faxineiro,
                                   game->mundo_plataformas, TOTAL_PLATAFORMAS, game->mundo_escadas, TOTAL_ESCADAS,
                                   game->sala_atual, game->estado_fade, game->projeteis, MAX_PROJETEIS,
-                                  game->particulas, MAX_PARTICULAS);
+                                  game->particulas, MAX_PARTICULAS,
+                                  game->marcas_fuligem, MAX_MARCAS_FULIGEM,
+                                  game->textos_flutuantes, MAX_TEXTOS_FLUTUANTES);
                 atualizar_particulas(game->particulas, MAX_PARTICULAS);
 
                 if (game->faxineiro.morreu) {
@@ -1155,18 +1309,26 @@ void game_run(Game *game) {
                             game->opcao_config, game->slot_sendo_remapeado, &game->controles,
                             game->nome_jogador, game->fonte);
             }
+            else if (game->estado_jogo == MENU_TABELA_PERIODICA) {
+                al_use_transform(&camera_ui);
+                desenhar_menu_tabela_periodica(game->elemento_tabela_selecionado, game->frame_anim_tabela,
+                                               game->descoberto_global, game->descobridor_global, game->novo_na_tabela,
+                                               game->mostrar_botao_reset_tabela,
+                                               &game->anomalia, game->fonte);
+            }
             else if (game->estado_jogo == ESTADO_JOGANDO || game->estado_jogo == ESTADO_PAUSADO) {
                 al_use_transform(&camera_jogo);
                 desenhar_mundo(game->sala_atual, &game->faxineiro, &game->anomalia, &game->arma_mop, &game->arma_soprador,
                                &game->soprador, &game->refil_agua, &game->bateria, &game->kit_medico,
-                               &game->item_scanner,
+                               &game->item_scanner, &game->pilula_antirad,
                                game->projeteis, MAX_PROJETEIS, game->particulas, MAX_PARTICULAS,
+                               game->marcas_fuligem, MAX_MARCAS_FULIGEM,
                                game->mundo_plataformas, TOTAL_PLATAFORMAS,
                                game->mundo_escadas, TOTAL_ESCADAS, game->mundo_portas, TOTAL_PORTAS,
                                game->mundo_elevadores, TOTAL_ELEVADORES, game->textos_flutuantes, MAX_TEXTOS_FLUTUANTES,
                                &game->sprites, game->prop_na_frente, game->estado_fade, game->alpha_fade,
                                game->alpha_game_over, game->opcao_game_over,
-                               game->modo_scanner, game->tempo_scan, game->elemento_foco_id, game->elemento_descoberto,
+                               game->modo_scanner, game->tempo_scan, game->elemento_foco_id, game->descoberto_run,
                                game->mostrar_hitbox, game->fonte, largura_camera, altura_camera);
 
                 if (game->estado_jogo == ESTADO_PAUSADO) {
@@ -1201,6 +1363,8 @@ void game_cleanup(Game *game) {
         if (game->anomalia.sprites_normal[i]) al_destroy_bitmap(game->anomalia.sprites_normal[i]);
         if (game->anomalia.sprites_bre[i]) al_destroy_bitmap(game->anomalia.sprites_bre[i]);
     }
+    if (game->anomalia.sprite_olho) al_destroy_bitmap(game->anomalia.sprite_olho);
+    if (game->anomalia.sprite_olho_m) al_destroy_bitmap(game->anomalia.sprite_olho_m);
     for (int i = 0; i < MAX_SALAS; i++) {
         if (game->sprites.backgrounds[i]) al_destroy_bitmap(game->sprites.backgrounds[i]);
     }
@@ -1215,6 +1379,7 @@ void game_cleanup(Game *game) {
     if (game->sprites.sprite_hud_bateria) al_destroy_bitmap(game->sprites.sprite_hud_bateria);
     if (game->sprites.sprite_hud_caveira) al_destroy_bitmap(game->sprites.sprite_hud_caveira);
     if (game->sprites.sprite_scanner) al_destroy_bitmap(game->sprites.sprite_scanner);
+    if (game->sprites.sprite_anti_radiacao) al_destroy_bitmap(game->sprites.sprite_anti_radiacao);
     if (game->fonte) al_destroy_font(game->fonte);
     if (game->timer) al_destroy_timer(game->timer);
     if (game->fila_eventos) al_destroy_event_queue(game->fila_eventos);

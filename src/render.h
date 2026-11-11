@@ -25,6 +25,7 @@ typedef struct {
     ALLEGRO_BITMAP *sprite_hud_bateria;
     ALLEGRO_BITMAP *sprite_hud_caveira;
     ALLEGRO_BITMAP *sprite_scanner;
+    ALLEGRO_BITMAP *sprite_anti_radiacao;
 } GameSprites;
 
 bool scanner_posicao_dentro_painel(float mouse_x, float mouse_y);
@@ -39,7 +40,9 @@ void desenhar_visor_scanner(int modo_scanner, float tempo_scan, int elemento_foc
 
 ALLEGRO_COLOR obter_cor_temperatura(float temp);
 void obter_cores_temperatura(float temp, ALLEGRO_COLOR *cor_borda, ALLEGRO_COLOR *cor_centro);
-void desenhar_sprite_quente(ALLEGRO_BITMAP *sprite, float centro_x, float centro_y, float larg_fallback, float alt_fallback, int flags, float temp, int frame_atual);
+void desenhar_sprite_quente(ALLEGRO_BITMAP *sprite, float centro_x, float centro_y, float larg_fallback, float alt_fallback, int flags, float temp, int frame_atual, ALLEGRO_COLOR cor_elemento);
+void desenhar_olhos_inimigo(const Inimigo *anomalia, ALLEGRO_COLOR cor_elemento);
+void desenhar_marcas_fuligem(const MarcaFuligem *marcas, int max_marcas, int sala_atual);
 void desenhar_particulas(Particula *particulas, int max_particulas);
 void desenhar_segmento_bateria(float x, float y, ALLEGRO_COLOR cor);
 void desenhar_segmento_bateria_topo(float x, float y, ALLEGRO_COLOR cor);
@@ -49,8 +52,9 @@ void desenhar_hud_jogador(Jogador *faxineiro, GameSprites *sprites);
 
 void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item *arma_mop, Item *arma_soprador,
                     Soprador *soprador, Coletavel *refil_agua, Coletavel *bateria, Coletavel *kit_medico,
-                    Coletavel *item_scanner,
+                    Coletavel *item_scanner, Coletavel *pilula_antirad,
                     Projetil *projeteis, int max_proj, Particula *particulas, int max_particulas,
+                    MarcaFuligem *marcas_fuligem, int max_marcas,
                     Plataforma *plataformas, int total_plat,
                     Escada *escadas, int total_escadas, Porta *portas, int total_portas,
                     Elevador *elevadores, int total_elevadores, TextoFlutuante *textos, int max_textos,
@@ -62,5 +66,19 @@ void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item 
 void desenhar_ui(int estado_jogo, int opcao_menu, int opcao_confirma, int opcao_pause,
                  int opcao_config, int slot_sendo_remapeado, Controles *controles,
                  const char *nome_jogador, ALLEGRO_FONT *fonte);
+
+void obter_coordenadas_tabela(int z, int *gx, int *gy);
+int tabela_periodica_primeiro_descoberto(const bool *elemento_descoberto);
+int tabela_periodica_obter_elemento_clicado(float mouse_x, float mouse_y);
+bool tabela_periodica_clique_voltar(float mouse_x, float mouse_y);
+bool tabela_periodica_clique_reset(float mouse_x, float mouse_y, bool mostrar_botao_reset);
+int tabela_periodica_navegar(int z_atual, int dx, int dy);
+void desenhar_menu_tabela_periodica(int elemento_selecionado, int frame_anim,
+                                    const bool *descoberto_global,
+                                    const char descobridor_global[MAX_ELEMENTOS + 1][32],
+                                    const bool *novo_na_tabela,
+                                    bool mostrar_botao_reset,
+                                    const Inimigo *anomalia,
+                                    ALLEGRO_FONT *fonte);
 
 #endif
