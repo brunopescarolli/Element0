@@ -52,6 +52,8 @@ static void reiniciar_campanha(Game *game) {
     game->faxineiro.barra_bateria = 100.0f;
     game->faxineiro.refil_agua_qtd = 0;
     game->faxineiro.bateria_qtd = 0;
+    game->faxineiro.possui_scanner = false;
+    game->faxineiro.scanner_ativo = false;
     game->faxineiro.timer_dano = 0;
     game->faxineiro.morreu = false;
 
@@ -71,6 +73,12 @@ static void reiniciar_campanha(Game *game) {
     game->refil_agua = (Coletavel){ 100.0f, 115.0f, 12.0f, 12.0f, 0, true };
     game->bateria = (Coletavel){ 120.0f, 115.0f, 12.0f, 12.0f, 0, true };
     game->kit_medico = (Coletavel){ 140.0f, 115.0f, 12.0f, 12.0f, 0, true };
+    game->item_scanner = (Coletavel){ 160.0f, 115.0f, 12.0f, 12.0f, 0, true };
+
+    game->modo_scanner = SCANNER_FECHADO;
+    for (int i = 0; i <= MAX_ELEMENTOS; i++) game->elemento_descoberto[i] = false;
+    game->tempo_scan = 0.0f;
+    game->elemento_foco_id = 0;
 
     game->anomalia.x = 100.0f;
     game->anomalia.y = 254.0f - (30.0f / 2.0f);
@@ -175,6 +183,8 @@ bool game_init(Game *game) {
     game->faxineiro.barra_bateria = 100.0f;
     game->faxineiro.refil_agua_qtd = 0;
     game->faxineiro.bateria_qtd = 0;
+    game->faxineiro.possui_scanner = false;
+    game->faxineiro.scanner_ativo = false;
     game->faxineiro.timer_dano = 0;
     game->faxineiro.morreu = false;
 
@@ -397,12 +407,19 @@ bool game_init(Game *game) {
     game->sprites.sprite_hud_agua = carregar_sprite_seguro("assets/sprites/barra_agua.png");
     game->sprites.sprite_hud_bateria = carregar_sprite_seguro("assets/sprites/barra_bateria.png");
     game->sprites.sprite_hud_caveira = carregar_sprite_seguro("assets/sprites/caveira_radiacao.png");
+    game->sprites.sprite_scanner = carregar_sprite_seguro("assets/sprites/scanner.png");
 
     game->arma_soprador = (Item){ 80.0f, 127.0f, 0.0f, 30.0f, true, 0, game->sprites.sprite_soprador };
     game->soprador = (Soprador){ 0.0f, 0.0f, 34.0f, 16.0f, false };
     game->refil_agua = (Coletavel){ 100.0f, 115.0f, 12.0f, 12.0f, 0, true };
     game->bateria = (Coletavel){ 120.0f, 115.0f, 12.0f, 12.0f, 0, true };
     game->kit_medico = (Coletavel){ 140.0f, 115.0f, 12.0f, 12.0f, 0, true };
+    game->item_scanner = (Coletavel){ 160.0f, 115.0f, 12.0f, 12.0f, 0, true };
+
+    game->modo_scanner = SCANNER_FECHADO;
+    for (int i = 0; i <= MAX_ELEMENTOS; i++) game->elemento_descoberto[i] = false;
+    game->tempo_scan = 0.0f;
+    game->elemento_foco_id = 0;
 
     game->anomalia = (Inimigo){
         100, 254.0 - (30.0 / 2.0), 40.0, 30.0,
@@ -647,6 +664,31 @@ void game_run(Game *game) {
                             game->faxineiro.arma_equipada = game->faxineiro.arma_slot_2;
                         }
                     }
+                    else if (evento.keyboard.keycode == ALLEGRO_KEY_T) {
+                        if (game->faxineiro.possui_scanner) {
+                            game->faxineiro.scanner_ativo = !game->faxineiro.scanner_ativo;
+                            if (game->faxineiro.scanner_ativo) {
+                                bool tem_inimigo_desconhecido = false;
+                                int inimigo_id = 0;
+                                if (game->anomalia.sala_origem == game->sala_atual && game->anomalia.numero_atomico > 0) {
+                                    inimigo_id = game->anomalia.numero_atomico;
+                                    if (!game->elemento_descoberto[inimigo_id]) {
+                                        tem_inimigo_desconhecido = true;
+                                    }
+                                }
+                                if (tem_inimigo_desconhecido) {
+                                    game->modo_scanner = SCANNER_ESCANEANDO;
+                                    game->elemento_foco_id = inimigo_id;
+                                    game->tempo_scan = 3.0f;
+                                } else {
+                                    game->modo_scanner = SCANNER_MENU;
+                                    game->tempo_scan = 0.0f;
+                                }
+                            } else {
+                                game->modo_scanner = SCANNER_FECHADO;
+                            }
+                        }
+                    }
                 }
             }
             else if (game->estado_jogo == ESTADO_PAUSADO) {
@@ -764,6 +806,18 @@ void game_run(Game *game) {
                 }
             }
 
+            if (game->estado_jogo == ESTADO_JOGANDO && game->modo_scanner != SCANNER_FECHADO && !game->faxineiro.morreu) {
+                if (scanner_clique_botao_fechar(mapa_mouse_x, mapa_mouse_y)) {
+                    sobre_elemento = true;
+                } else if ((game->modo_scanner == SCANNER_ESCANEANDO || game->modo_scanner == SCANNER_DETALHES) &&
+                           scanner_clique_botao_voltar(mapa_mouse_x, mapa_mouse_y)) {
+                    sobre_elemento = true;
+                } else if (game->modo_scanner == SCANNER_MENU &&
+                           scanner_obter_item_clicado_menu(mapa_mouse_x, mapa_mouse_y, game->elemento_descoberto) > 0) {
+                    sobre_elemento = true;
+                }
+            }
+
             if (sobre_elemento) {
                 al_set_system_mouse_cursor(game->tela, ALLEGRO_SYSTEM_MOUSE_CURSOR_LINK);
             } else {
@@ -794,7 +848,17 @@ void game_run(Game *game) {
                         }
                     }
                 } else {
-                    game->input.atirando = true;
+                    bool clique_no_scanner = false;
+                    if (game->modo_scanner != SCANNER_FECHADO) {
+                        clique_no_scanner = scanner_processar_clique_mouse(
+                            &game->modo_scanner, &game->faxineiro.scanner_ativo,
+                            &game->elemento_foco_id, game->elemento_descoberto,
+                            mapa_mouse_x, mapa_mouse_y
+                        );
+                    }
+                    if (!clique_no_scanner) {
+                        game->input.atirando = true;
+                    }
                 }
             }
             else if (game->estado_jogo == ESTADO_MENU_PRINCIPAL && evento.mouse.button == 1) {
@@ -983,8 +1047,25 @@ void game_run(Game *game) {
                     }
                 }
 
+                if (game->modo_scanner == SCANNER_ESCANEANDO) {
+                    game->tempo_scan -= (1.0f / (float)FPS);
+                    if (game->tempo_scan <= 0.0f) {
+                        game->tempo_scan = 0.0f;
+                        if (game->elemento_foco_id > 0 && game->elemento_foco_id <= MAX_ELEMENTOS) {
+                            game->elemento_descoberto[game->elemento_foco_id] = true;
+                        }
+                        game->modo_scanner = SCANNER_DETALHES;
+                    }
+                }
+
+                if (game->faxineiro.morreu) {
+                    game->faxineiro.scanner_ativo = false;
+                    game->modo_scanner = SCANNER_FECHADO;
+                }
+
                 atualizar_jogador(&game->faxineiro, &game->input, &game->arma_mop, &game->arma_soprador,
                                   &game->soprador, &game->refil_agua, &game->bateria, &game->kit_medico,
+                                  &game->item_scanner,
                                   &game->anomalia, game->mundo_plataformas, TOTAL_PLATAFORMAS,
                                   game->mundo_escadas, TOTAL_ESCADAS, game->mundo_portas, TOTAL_PORTAS,
                                   game->projeteis, MAX_PROJETEIS, game->particulas, MAX_PARTICULAS,
@@ -1078,12 +1159,14 @@ void game_run(Game *game) {
                 al_use_transform(&camera_jogo);
                 desenhar_mundo(game->sala_atual, &game->faxineiro, &game->anomalia, &game->arma_mop, &game->arma_soprador,
                                &game->soprador, &game->refil_agua, &game->bateria, &game->kit_medico,
+                               &game->item_scanner,
                                game->projeteis, MAX_PROJETEIS, game->particulas, MAX_PARTICULAS,
                                game->mundo_plataformas, TOTAL_PLATAFORMAS,
                                game->mundo_escadas, TOTAL_ESCADAS, game->mundo_portas, TOTAL_PORTAS,
                                game->mundo_elevadores, TOTAL_ELEVADORES, game->textos_flutuantes, MAX_TEXTOS_FLUTUANTES,
                                &game->sprites, game->prop_na_frente, game->estado_fade, game->alpha_fade,
                                game->alpha_game_over, game->opcao_game_over,
+                               game->modo_scanner, game->tempo_scan, game->elemento_foco_id, game->elemento_descoberto,
                                game->mostrar_hitbox, game->fonte, largura_camera, altura_camera);
 
                 if (game->estado_jogo == ESTADO_PAUSADO) {
@@ -1131,6 +1214,7 @@ void game_cleanup(Game *game) {
     if (game->sprites.sprite_hud_agua) al_destroy_bitmap(game->sprites.sprite_hud_agua);
     if (game->sprites.sprite_hud_bateria) al_destroy_bitmap(game->sprites.sprite_hud_bateria);
     if (game->sprites.sprite_hud_caveira) al_destroy_bitmap(game->sprites.sprite_hud_caveira);
+    if (game->sprites.sprite_scanner) al_destroy_bitmap(game->sprites.sprite_scanner);
     if (game->fonte) al_destroy_font(game->fonte);
     if (game->timer) al_destroy_timer(game->timer);
     if (game->fila_eventos) al_destroy_event_queue(game->fila_eventos);

@@ -60,6 +60,34 @@ enum EstadoFisico { SOLIDO, LIQUIDO, GASOSO };
 enum Direcao { DIR_ESQUERDA = 0, DIR_DIREITA = 1 };
 enum TipoFrame { FRAME_IDLE = 0, FRAME_BRE = 1, FRAME_WALK1 = 2, FRAME_WALK2 = 3 };
 
+enum ModoScanner {
+    SCANNER_FECHADO = 0,
+    SCANNER_ESCANEANDO,
+    SCANNER_DETALHES,
+    SCANNER_MENU
+};
+
+#define SCANNER_PAINEL_X 347.0f
+#define SCANNER_PAINEL_Y 6.0f
+#define SCANNER_PAINEL_W 127.0f
+#define SCANNER_PAINEL_H 123.0f
+
+#define SCANNER_BTN_VOLTAR_X (SCANNER_PAINEL_X + 4.0f)
+#define SCANNER_BTN_VOLTAR_Y (SCANNER_PAINEL_Y + 3.0f)
+#define SCANNER_BTN_VOLTAR_W 35.0f
+#define SCANNER_BTN_VOLTAR_H 8.0f
+
+#define SCANNER_BTN_FECHAR_X (SCANNER_PAINEL_X + SCANNER_PAINEL_W - 11.0f)
+#define SCANNER_BTN_FECHAR_Y (SCANNER_PAINEL_Y + 3.0f)
+#define SCANNER_BTN_FECHAR_W 8.0f
+#define SCANNER_BTN_FECHAR_H 8.0f
+
+#define SCANNER_MENU_LIST_Y (SCANNER_PAINEL_Y + 22.0f)
+#define SCANNER_MENU_ITEM_H 15.0f
+#define SCANNER_MENU_ITEM_GAP 1.5f
+#define SCANNER_MENU_ITEM_W (SCANNER_PAINEL_W - 8.0f)
+#define SCANNER_MENU_ITEM_X (SCANNER_PAINEL_X + 4.0f)
+
 enum TipoProjetil { PROJETIL_AGUA, PROJETIL_FOGO, PROJETIL_NORMAL };
 enum TipoArma { ARMA_NENHUMA = -1, ARMA_MOP = 0, ARMA_SOPRADOR = 1 };
 enum TipoParticula { PARTICULA_GOTA = 0, PARTICULA_VAPOR = 1, PARTICULA_CALOR = 2 };
@@ -125,6 +153,9 @@ typedef struct {
     int bateria_qtd;
     int timer_dano;
     bool morreu;
+
+    bool possui_scanner;
+    bool scanner_ativo;
 } Jogador;
 
 typedef struct {

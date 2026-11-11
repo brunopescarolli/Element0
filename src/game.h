@@ -49,9 +49,15 @@ typedef struct {
     Coletavel refil_agua;
     Coletavel bateria;
     Coletavel kit_medico;
+    Coletavel item_scanner;
     Inimigo anomalia;
     Projetil projeteis[MAX_PROJETEIS];
     Particula particulas[MAX_PARTICULAS];
+
+    int modo_scanner;
+    bool elemento_descoberto[MAX_ELEMENTOS + 1];
+    float tempo_scan;
+    int elemento_foco_id;
 
     Plataforma mundo_plataformas[TOTAL_PLATAFORMAS];
     Porta mundo_portas[TOTAL_PORTAS];

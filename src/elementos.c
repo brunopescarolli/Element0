@@ -280,9 +280,21 @@ char* proximo_campo_csv(char **cursor) {
 void carregar_tabela_periodica(const char *caminho_arquivo) {
     FILE *file = fopen(caminho_arquivo, "r");
     if (!file) {
+        char caminho_alt[256];
+        snprintf(caminho_alt, sizeof(caminho_alt), "../%s", caminho_arquivo);
+        file = fopen(caminho_alt, "r");
+    }
+    if (!file) {
         printf("Aviso: '%s' nao encontrado. Usando fallbacks.\n", caminho_arquivo);
         tabela_periodica[31].numero_atomico = 31;
-        tabela_periodica[31].ponto_fusao = 29.8;
+        strncpy(tabela_periodica[31].simbolo, "Ga", sizeof(tabela_periodica[31].simbolo) - 1);
+        tabela_periodica[31].simbolo[sizeof(tabela_periodica[31].simbolo) - 1] = '\0';
+        strncpy(tabela_periodica[31].nome, "Gálio", sizeof(tabela_periodica[31].nome) - 1);
+        tabela_periodica[31].nome[sizeof(tabela_periodica[31].nome) - 1] = '\0';
+        strncpy(tabela_periodica[31].categoria, "Metal", sizeof(tabela_periodica[31].categoria) - 1);
+        tabela_periodica[31].categoria[sizeof(tabela_periodica[31].categoria) - 1] = '\0';
+        tabela_periodica[31].ponto_fusao = 29.8f;
+        tabela_periodica[31].ponto_ebulicao = 2400.0f;
         return;
     }
 
@@ -292,13 +304,29 @@ void carregar_tabela_periodica(const char *caminho_arquivo) {
     while (fgets(linha, sizeof(linha), file)) {
         char *cursor = linha;
         DadosElemento e;
+        memset(&e, 0, sizeof(DadosElemento));
 
-        e.numero_atomico = atoi(proximo_campo_csv(&cursor));
-        strcpy(e.simbolo, proximo_campo_csv(&cursor) ? "" : "");
-        strcpy(e.nome, proximo_campo_csv(&cursor) ? "" : "");
-        e.periodo = atoi(proximo_campo_csv(&cursor));
-        strcpy(e.grupo_familia, proximo_campo_csv(&cursor) ? "" : "");
-        strcpy(e.categoria, proximo_campo_csv(&cursor) ? "" : "");
+        char *str_num = proximo_campo_csv(&cursor);
+        e.numero_atomico = str_num ? atoi(str_num) : 0;
+
+        char *str_simbolo = proximo_campo_csv(&cursor);
+        strncpy(e.simbolo, str_simbolo ? str_simbolo : "", sizeof(e.simbolo) - 1);
+        e.simbolo[sizeof(e.simbolo) - 1] = '\0';
+
+        char *str_nome = proximo_campo_csv(&cursor);
+        strncpy(e.nome, str_nome ? str_nome : "", sizeof(e.nome) - 1);
+        e.nome[sizeof(e.nome) - 1] = '\0';
+
+        char *str_periodo = proximo_campo_csv(&cursor);
+        e.periodo = str_periodo ? atoi(str_periodo) : 0;
+
+        char *str_familia = proximo_campo_csv(&cursor);
+        strncpy(e.grupo_familia, str_familia ? str_familia : "", sizeof(e.grupo_familia) - 1);
+        e.grupo_familia[sizeof(e.grupo_familia) - 1] = '\0';
+
+        char *str_categoria = proximo_campo_csv(&cursor);
+        strncpy(e.categoria, str_categoria ? str_categoria : "", sizeof(e.categoria) - 1);
+        e.categoria[sizeof(e.categoria) - 1] = '\0';
 
         char *str_estado = proximo_campo_csv(&cursor);
         if (str_estado && (strcmp(str_estado, "Sólido") == 0 || strcmp(str_estado, "Solido") == 0)) e.estado_fisico_20C = SOLIDO;

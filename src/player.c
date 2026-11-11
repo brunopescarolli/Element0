@@ -5,6 +5,7 @@
 
 void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *arma_soprador,
                        Soprador *soprador, Coletavel *refil_agua, Coletavel *bateria, Coletavel *kit_medico,
+                       Coletavel *item_scanner,
                        Inimigo *anomalia, Plataforma *plataformas, int total_plat, Escada *escadas, int total_escadas,
                        Porta *portas, int total_portas, Projetil *projeteis, int max_proj,
                        Particula *particulas, int max_particulas,
@@ -486,6 +487,16 @@ void atualizar_jogador(Jogador *faxineiro, Input *input, Item *arma_mop, Item *a
             instanciar_texto_flutuante(textos, max_textos, faxineiro->x, player_top - 10.0f, buffer, al_map_rgb(0, 255, 0));
             faxineiro->barra_vida = 100.0f;
             kit_medico->ativo = false;
+        }
+    }
+
+    if (item_scanner && item_scanner->ativo && item_scanner->sala == *sala_atual) {
+        bool col_scanner = (player_right > item_scanner->x) && (player_left < item_scanner->x + item_scanner->w) &&
+                           (player_bottom > item_scanner->y) && (player_top < item_scanner->y + item_scanner->h);
+        if (col_scanner) {
+            faxineiro->possui_scanner = true;
+            item_scanner->ativo = false;
+            instanciar_texto_flutuante(textos, max_textos, faxineiro->x, player_top - 10.0f, "* scanner quimico [T] *", al_map_rgb(100, 255, 120));
         }
     }
 

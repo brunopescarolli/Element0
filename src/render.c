@@ -356,7 +356,7 @@ void desenhar_hud_jogador(Jogador *faxineiro, GameSprites *sprites) {
                                  radio_x2, fill_vida_y + altura_preenchimento_vida, cor_radiacao);
     }
 
-    // 1.2. Preenchimento da Barra de Água e Ícones de Refil (apenas se possuir o Mop)
+    // 1.2. Preenchimento da Barra de Água (apenas se possuir o Mop)
     if (faxineiro->possui_mop) {
         float pct_agua = faxineiro->barra_agua / 100.0f;
         if (pct_agua < 0.0f) pct_agua = 0.0f;
@@ -378,15 +378,9 @@ void desenhar_hud_jogador(Jogador *faxineiro, GameSprites *sprites) {
             al_draw_filled_rectangle(x_inicio, y_linha,
                                      fill_agua_x + largura_preenchimento_agua, y_linha + 1.0f, cor_agua);
         }
-
-        for (int i = 0; i < faxineiro->refil_agua_qtd && i < 3; i++) {
-            float icone_x = agua_x + offset_icone_agua_x;
-            float icone_y = agua_y + offset_icone_agua_y + ((float)i * espacamento_icone_agua_y);
-            desenhar_icone_refil_agua(icone_x, icone_y, cor_agua);
-        }
     }
 
-    // 1.3. Preenchimento dos 8 Blocos de Bateria e Ícones de Baterias Guardadas (apenas se possuir o Soprador)
+    // 1.3. Preenchimento dos 8 Blocos de Bateria (apenas se possuir o Soprador)
     if (faxineiro->possui_soprador) {
         int segmentos_ativos = 0;
         if (faxineiro->barra_bateria > 0.0f) {
@@ -405,12 +399,6 @@ void desenhar_hud_jogador(Jogador *faxineiro, GameSprites *sprites) {
                 float topo_y = bateria_y + offset_topo_bateria_y;
                 desenhar_segmento_bateria_topo(topo_x, topo_y, cor_bateria);
             }
-        }
-
-        for (int i = 0; i < faxineiro->bateria_qtd && i < 3; i++) {
-            float icone_x = bateria_x + offset_icone_bateria_x;
-            float icone_y = bateria_y + offset_icone_bateria_y + ((float)i * espacamento_icone_bateria_y);
-            desenhar_icone_bateria_guardada(icone_x, icone_y, cor_bateria);
         }
     }
 
@@ -445,18 +433,332 @@ void desenhar_hud_jogador(Jogador *faxineiro, GameSprites *sprites) {
         }
     }
 
+    // =========================================================================
+    // PASSO 3 (Foreground / Ícones de Inventário): Desenhados após as molduras
+    // para nunca serem sobrepostos pela parte opaca da sprite da moldura
+    // =========================================================================
+    for (int i = 0; i < faxineiro->refil_agua_qtd && i < 3; i++) {
+        float icone_x = agua_x + offset_icone_agua_x;
+        float icone_y = agua_y + offset_icone_agua_y + ((float)i * espacamento_icone_agua_y);
+        desenhar_icone_refil_agua(icone_x, icone_y, cor_agua);
+    }
+
+    for (int i = 0; i < faxineiro->bateria_qtd && i < 3; i++) {
+        float icone_x = bateria_x + offset_icone_bateria_x;
+        float icone_y = bateria_y + offset_icone_bateria_y + ((float)i * espacamento_icone_bateria_y);
+        desenhar_icone_bateria_guardada(icone_x, icone_y, cor_bateria);
+    }
+
     // Restaura a transformação original da câmera
     al_use_transform(&trans_original);
 }
 
+bool scanner_posicao_dentro_painel(float mouse_x, float mouse_y) {
+    return (mouse_x >= SCANNER_PAINEL_X && mouse_x <= (SCANNER_PAINEL_X + SCANNER_PAINEL_W) &&
+            mouse_y >= SCANNER_PAINEL_Y && mouse_y <= (SCANNER_PAINEL_Y + SCANNER_PAINEL_H));
+}
+
+bool scanner_clique_botao_voltar(float mouse_x, float mouse_y) {
+    return (mouse_x >= SCANNER_BTN_VOLTAR_X && mouse_x <= (SCANNER_BTN_VOLTAR_X + SCANNER_BTN_VOLTAR_W) &&
+            mouse_y >= SCANNER_BTN_VOLTAR_Y && mouse_y <= (SCANNER_BTN_VOLTAR_Y + SCANNER_BTN_VOLTAR_H));
+}
+
+bool scanner_clique_botao_fechar(float mouse_x, float mouse_y) {
+    return (mouse_x >= SCANNER_BTN_FECHAR_X && mouse_x <= (SCANNER_BTN_FECHAR_X + SCANNER_BTN_FECHAR_W) &&
+            mouse_y >= SCANNER_BTN_FECHAR_Y && mouse_y <= (SCANNER_BTN_FECHAR_Y + SCANNER_BTN_FECHAR_H));
+}
+
+int scanner_obter_item_clicado_menu(float mouse_x, float mouse_y, const bool *elemento_descoberto) {
+    if (!elemento_descoberto) {
+        return 0;
+    }
+    if (mouse_x < SCANNER_MENU_ITEM_X || mouse_x > (SCANNER_MENU_ITEM_X + SCANNER_MENU_ITEM_W)) {
+        return 0;
+    }
+
+    int indice_visivel = 0;
+    for (int i = 1; i <= MAX_ELEMENTOS; i++) {
+        if (elemento_descoberto[i] == true) {
+            float item_y = SCANNER_MENU_LIST_Y + ((float)indice_visivel * (SCANNER_MENU_ITEM_H + SCANNER_MENU_ITEM_GAP));
+            if (mouse_y >= item_y && mouse_y <= (item_y + SCANNER_MENU_ITEM_H)) {
+                return i;
+            }
+            indice_visivel++;
+        }
+    }
+    return 0;
+}
+
+bool scanner_processar_clique_mouse(int *modo_scanner, bool *scanner_ativo, int *elemento_foco_id,
+                                    const bool *elemento_descoberto, float mouse_x, float mouse_y) {
+    if (!modo_scanner || *modo_scanner == SCANNER_FECHADO) {
+        return false;
+    }
+
+    // 1. Botão Fechar [X]
+    if (scanner_clique_botao_fechar(mouse_x, mouse_y)) {
+        *modo_scanner = SCANNER_FECHADO;
+        if (scanner_ativo) *scanner_ativo = false;
+        return true;
+    }
+
+    // 2. Botão Voltar [<- Lista] nos estados de detalhe ou escaneamento
+    if (*modo_scanner == SCANNER_ESCANEANDO || *modo_scanner == SCANNER_DETALHES) {
+        if (scanner_clique_botao_voltar(mouse_x, mouse_y)) {
+            *modo_scanner = SCANNER_MENU;
+            return true;
+        }
+    }
+
+    // 3. Clique em item da lista no estado MENU
+    if (*modo_scanner == SCANNER_MENU) {
+        int id_clicado = scanner_obter_item_clicado_menu(mouse_x, mouse_y, elemento_descoberto);
+        if (id_clicado > 0) {
+            if (elemento_foco_id) *elemento_foco_id = id_clicado;
+            *modo_scanner = SCANNER_DETALHES;
+            return true;
+        }
+    }
+
+    // 4. Qualquer outro clique dentro do painel consome o clique
+    if (scanner_posicao_dentro_painel(mouse_x, mouse_y)) {
+        return true;
+    }
+
+    return false;
+}
+
+void desenhar_visor_scanner(int modo_scanner, float tempo_scan, int elemento_foco_id,
+                            const bool *elemento_descoberto, const Inimigo *anomalia,
+                            ALLEGRO_FONT *fonte) {
+    if (modo_scanner == SCANNER_FECHADO) return;
+
+    ALLEGRO_TRANSFORM trans_ui = *al_get_current_transform();
+    ALLEGRO_TRANSFORM trans_texto;
+    al_identity_transform(&trans_texto);
+    al_scale_transform(&trans_texto, 0.5f, 0.5f);
+    al_compose_transform(&trans_texto, &trans_ui);
+
+    // Fundo do painel: retângulo escuro arredondado com 50% de opacidade (reduzido em 50%)
+    al_draw_filled_rounded_rectangle(
+        SCANNER_PAINEL_X, SCANNER_PAINEL_Y,
+        SCANNER_PAINEL_X + SCANNER_PAINEL_W, SCANNER_PAINEL_Y + SCANNER_PAINEL_H,
+        3.0f, 3.0f, al_map_rgba_f(0.0f, 0.0f, 0.0f, 0.5f)
+    );
+
+    // Borda tecnológica verde com brilho sutil
+    al_draw_rounded_rectangle(
+        SCANNER_PAINEL_X, SCANNER_PAINEL_Y,
+        SCANNER_PAINEL_X + SCANNER_PAINEL_W, SCANNER_PAINEL_Y + SCANNER_PAINEL_H,
+        3.0f, 3.0f, al_map_rgba_f(0.2f, 0.7f, 0.4f, 0.7f), 1.0f
+    );
+
+    ALLEGRO_COLOR cor_texto = al_map_rgba_f(1.0f, 1.0f, 1.0f, 0.75f);
+    ALLEGRO_COLOR cor_destaque = al_map_rgba_f(0.4f, 1.0f, 0.6f, 0.9f);
+    ALLEGRO_COLOR cor_btn_bg = al_map_rgba_f(0.12f, 0.2f, 0.15f, 0.8f);
+    ALLEGRO_COLOR cor_btn_borda = al_map_rgba_f(0.3f, 0.8f, 0.5f, 0.85f);
+
+    // Botão Fechar [X] no topo direito
+    al_draw_filled_rounded_rectangle(
+        SCANNER_BTN_FECHAR_X, SCANNER_BTN_FECHAR_Y,
+        SCANNER_BTN_FECHAR_X + SCANNER_BTN_FECHAR_W, SCANNER_BTN_FECHAR_Y + SCANNER_BTN_FECHAR_H,
+        1.5f, 1.5f, cor_btn_bg
+    );
+    al_draw_rounded_rectangle(
+        SCANNER_BTN_FECHAR_X, SCANNER_BTN_FECHAR_Y,
+        SCANNER_BTN_FECHAR_X + SCANNER_BTN_FECHAR_W, SCANNER_BTN_FECHAR_Y + SCANNER_BTN_FECHAR_H,
+        1.5f, 1.5f, cor_btn_borda, 1.0f
+    );
+    al_use_transform(&trans_texto);
+    al_draw_text(fonte, cor_texto, (SCANNER_BTN_FECHAR_X + (SCANNER_BTN_FECHAR_W / 2.0f)) * 2.0f, (SCANNER_BTN_FECHAR_Y + 2.0f) * 2.0f, ALLEGRO_ALIGN_CENTRE, "X");
+    al_use_transform(&trans_ui);
+
+    if (modo_scanner == SCANNER_ESCANEANDO || modo_scanner == SCANNER_DETALHES) {
+        // Botão [<- Lista] no topo esquerdo
+        al_draw_filled_rounded_rectangle(
+            SCANNER_BTN_VOLTAR_X, SCANNER_BTN_VOLTAR_Y,
+            SCANNER_BTN_VOLTAR_X + SCANNER_BTN_VOLTAR_W, SCANNER_BTN_VOLTAR_Y + SCANNER_BTN_VOLTAR_H,
+            1.5f, 1.5f, cor_btn_bg
+        );
+        al_draw_rounded_rectangle(
+            SCANNER_BTN_VOLTAR_X, SCANNER_BTN_VOLTAR_Y,
+            SCANNER_BTN_VOLTAR_X + SCANNER_BTN_VOLTAR_W, SCANNER_BTN_VOLTAR_Y + SCANNER_BTN_VOLTAR_H,
+            1.5f, 1.5f, cor_btn_borda, 1.0f
+        );
+
+        const char *titulo = (modo_scanner == SCANNER_ESCANEANDO) ? "ESCANEANDO..." : "DETALHES";
+        al_use_transform(&trans_texto);
+        al_draw_text(fonte, cor_texto, (SCANNER_BTN_VOLTAR_X + (SCANNER_BTN_VOLTAR_W / 2.0f)) * 2.0f, (SCANNER_BTN_VOLTAR_Y + 2.0f) * 2.0f, ALLEGRO_ALIGN_CENTRE, "<- Lista");
+        al_draw_text(fonte, cor_destaque, (SCANNER_PAINEL_X + 77.5f) * 2.0f, (SCANNER_PAINEL_Y + 5.0f) * 2.0f, ALLEGRO_ALIGN_CENTRE, titulo);
+        al_use_transform(&trans_ui);
+
+        // Linha divisória do cabeçalho
+        al_draw_line(
+            SCANNER_PAINEL_X + 4.0f, SCANNER_PAINEL_Y + 13.0f,
+            SCANNER_PAINEL_X + SCANNER_PAINEL_W - 4.0f, SCANNER_PAINEL_Y + 13.0f,
+            al_map_rgba_f(0.3f, 0.8f, 0.5f, 0.35f), 1.0f
+        );
+
+        // Caixa de exibição do sprite do inimigo (50% menor)
+        float box_x = SCANNER_PAINEL_X + 5.0f;
+        float box_y = SCANNER_PAINEL_Y + 15.0f;
+        float box_w = 27.0f;
+        float box_h = 21.0f;
+
+        al_draw_filled_rectangle(box_x, box_y, box_x + box_w, box_y + box_h, al_map_rgba_f(0.05f, 0.1f, 0.08f, 0.7f));
+        al_draw_rectangle(box_x, box_y, box_x + box_w, box_y + box_h, al_map_rgba_f(0.3f, 0.7f, 0.5f, 0.6f), 1.0f);
+
+        if (anomalia && elemento_foco_id == anomalia->numero_atomico && anomalia->sprites_normal[0] != NULL) {
+            ALLEGRO_BITMAP *spr = anomalia->sprites_normal[0];
+            float sw = (float)al_get_bitmap_width(spr);
+            float sh = (float)al_get_bitmap_height(spr);
+            float dw = sw * 0.5f;
+            float dh = sh * 0.5f;
+            float spr_x = box_x + (box_w - dw) / 2.0f;
+            float spr_y = box_y + (box_h - dh) / 2.0f;
+
+            if (modo_scanner == SCANNER_ESCANEANDO) {
+                // Silhueta totalmente preta durante o escaneamento
+                al_draw_tinted_scaled_bitmap(spr, al_map_rgba_f(0.0f, 0.0f, 0.0f, 1.0f), 0.0f, 0.0f, sw, sh, spr_x, spr_y, dw, dh, 0);
+            } else {
+                // Sprite com cores reais após o escaneamento
+                al_draw_scaled_bitmap(spr, 0.0f, 0.0f, sw, sh, spr_x, spr_y, dw, dh, 0);
+            }
+        } else {
+            if (modo_scanner == SCANNER_ESCANEANDO) {
+                al_draw_filled_rectangle(box_x + 4.0f, box_y + 3.0f, box_x + box_w - 4.0f, box_y + box_h - 3.0f, al_map_rgba_f(0.0f, 0.0f, 0.0f, 1.0f));
+            } else {
+                al_draw_filled_rectangle(box_x + 4.0f, box_y + 3.0f, box_x + box_w - 4.0f, box_y + box_h - 3.0f, al_map_rgba_f(0.2f, 0.5f, 0.35f, 0.8f));
+                if (elemento_foco_id > 0 && elemento_foco_id <= MAX_ELEMENTOS) {
+                    al_use_transform(&trans_texto);
+                    al_draw_text(fonte, al_map_rgba_f(1.0f, 1.0f, 1.0f, 0.9f), (box_x + (box_w / 2.0f)) * 2.0f, (box_y + 8.5f) * 2.0f, ALLEGRO_ALIGN_CENTRE, tabela_periodica[elemento_foco_id].simbolo);
+                    al_use_transform(&trans_ui);
+                }
+            }
+        }
+
+        // Informações no topo ao lado do preview
+        float info_x = box_x + box_w + 5.0f;
+        float info_y = box_y + 2.0f;
+
+        if (modo_scanner == SCANNER_ESCANEANDO) {
+            al_use_transform(&trans_texto);
+            al_draw_text(fonte, cor_destaque, info_x * 2.0f, info_y * 2.0f, 0, "Alvo: Anomalia");
+            al_draw_textf(fonte, cor_texto, info_x * 2.0f, (info_y + 6.0f) * 2.0f, 0, "Timer: %.1fs", tempo_scan);
+            al_use_transform(&trans_ui);
+
+            float prog = (1.0f - (tempo_scan / 3.0f));
+            if (prog < 0.0f) prog = 0.0f;
+            if (prog > 1.0f) prog = 1.0f;
+            al_draw_rectangle(info_x, info_y + 12.5f, info_x + 50.0f, info_y + 16.5f, al_map_rgba_f(0.3f, 0.8f, 0.5f, 0.6f), 1.0f);
+            al_draw_filled_rectangle(info_x + 0.5f, info_y + 13.0f, info_x + 0.5f + (prog * 49.0f), info_y + 16.0f, cor_destaque);
+        } else {
+            if (elemento_foco_id > 0 && elemento_foco_id <= MAX_ELEMENTOS) {
+                al_use_transform(&trans_texto);
+                al_draw_textf(fonte, cor_destaque, info_x * 2.0f, (box_y + 8.5f) * 2.0f, 0, "%s (%s)", tabela_periodica[elemento_foco_id].nome, tabela_periodica[elemento_foco_id].simbolo);
+                al_use_transform(&trans_ui);
+            }
+        }
+
+        // Linha divisória da ficha técnica
+        al_draw_line(
+            SCANNER_PAINEL_X + 4.0f, SCANNER_PAINEL_Y + 38.0f,
+            SCANNER_PAINEL_X + SCANNER_PAINEL_W - 4.0f, SCANNER_PAINEL_Y + 38.0f,
+            al_map_rgba_f(0.3f, 0.8f, 0.5f, 0.35f), 1.0f
+        );
+
+        // Ficha técnica (fonte reduzida em 50% e espaçamento vertical ajustado)
+        float tx = (SCANNER_PAINEL_X + 6.0f) * 2.0f;
+        float ty = (SCANNER_PAINEL_Y + 42.0f) * 2.0f;
+        float lh = 18.0f; // 9.0f de espaçamento vertical no espaço do painel
+
+        al_use_transform(&trans_texto);
+        if (modo_scanner == SCANNER_ESCANEANDO) {
+            al_draw_text(fonte, cor_texto, tx, ty + (0.0f * lh), 0, "No Atomico:   ???");
+            al_draw_text(fonte, cor_texto, tx, ty + (1.0f * lh), 0, "Simbolo:      ???");
+            al_draw_text(fonte, cor_texto, tx, ty + (2.0f * lh), 0, "Nome:         ???");
+            al_draw_text(fonte, cor_texto, tx, ty + (3.0f * lh), 0, "Categoria:    ???");
+            al_draw_text(fonte, cor_texto, tx, ty + (4.0f * lh), 0, "Magnetico:    ???");
+            al_draw_text(fonte, cor_texto, tx, ty + (5.0f * lh), 0, "Radioativo:   ???");
+            al_draw_text(fonte, cor_texto, tx, ty + (6.0f * lh), 0, "P. Fusao:     ???");
+            al_draw_text(fonte, cor_texto, tx, ty + (7.0f * lh), 0, "P. Ebulicao:  ???");
+        } else {
+            if (elemento_foco_id > 0 && elemento_foco_id <= MAX_ELEMENTOS) {
+                DadosElemento elem = tabela_periodica[elemento_foco_id];
+                al_draw_textf(fonte, cor_texto, tx, ty + (0.0f * lh), 0, "No Atomico:   %d", elem.numero_atomico);
+                al_draw_textf(fonte, cor_texto, tx, ty + (1.0f * lh), 0, "Simbolo:      %s", elem.simbolo);
+                al_draw_textf(fonte, cor_texto, tx, ty + (2.0f * lh), 0, "Nome:         %s", elem.nome);
+                al_draw_textf(fonte, cor_texto, tx, ty + (3.0f * lh), 0, "Categoria:    %s", elem.categoria);
+                al_draw_textf(fonte, cor_texto, tx, ty + (4.0f * lh), 0, "Magnetico:    %s", elem.magnetico ? "Sim" : "Nao");
+                al_draw_textf(fonte, cor_texto, tx, ty + (5.0f * lh), 0, "Radioativo:   %s", elem.radioativo ? "Sim" : "Nao");
+                al_draw_textf(fonte, cor_texto, tx, ty + (6.0f * lh), 0, "P. Fusao:     %.1f C", elem.ponto_fusao);
+                al_draw_textf(fonte, cor_texto, tx, ty + (7.0f * lh), 0, "P. Ebulicao:  %.1f C", elem.ponto_ebulicao);
+            }
+        }
+        al_use_transform(&trans_ui);
+    } else if (modo_scanner == SCANNER_MENU) {
+        // Cabeçalho do Menu de Elementos Descobertos
+        al_use_transform(&trans_texto);
+        al_draw_text(fonte, cor_destaque, (SCANNER_PAINEL_X + 58.0f) * 2.0f, (SCANNER_PAINEL_Y + 5.0f) * 2.0f, ALLEGRO_ALIGN_CENTRE, "Anomalias escaneadas");
+        al_draw_text(fonte, cor_texto, (SCANNER_PAINEL_X + 5.0f) * 2.0f, (SCANNER_PAINEL_Y + 14.0f) * 2.0f, 0, "Inimigos Catalogados:");
+        al_use_transform(&trans_ui);
+
+        // Linha divisória
+        al_draw_line(
+            SCANNER_PAINEL_X + 4.0f, SCANNER_PAINEL_Y + 20.0f,
+            SCANNER_PAINEL_X + SCANNER_PAINEL_W - 4.0f, SCANNER_PAINEL_Y + 20.0f,
+            al_map_rgba_f(0.3f, 0.8f, 0.5f, 0.35f), 1.0f
+        );
+
+        // Lista vertical de elementos catalogados (apenas descobertos, empilhados sequencialmente)
+        int indice_visivel = 0;
+        for (int i = 1; i <= MAX_ELEMENTOS; i++) {
+            if (!elemento_descoberto || elemento_descoberto[i] != true) {
+                continue;
+            }
+
+            float item_x = SCANNER_MENU_ITEM_X;
+            float item_y = SCANNER_MENU_LIST_Y + ((float)indice_visivel * (SCANNER_MENU_ITEM_H + SCANNER_MENU_ITEM_GAP));
+            float item_w = SCANNER_MENU_ITEM_W;
+            float item_h = SCANNER_MENU_ITEM_H;
+            indice_visivel++;
+
+            if ((item_y + item_h) > (SCANNER_PAINEL_Y + SCANNER_PAINEL_H - 2.0f)) {
+                break;
+            }
+
+            // Item descoberto
+            al_draw_filled_rounded_rectangle(item_x, item_y, item_x + item_w, item_y + item_h, 2.0f, 2.0f, al_map_rgba_f(0.08f, 0.22f, 0.14f, 0.7f));
+            al_draw_rounded_rectangle(item_x, item_y, item_x + item_w, item_y + item_h, 2.0f, 2.0f, al_map_rgba_f(0.3f, 0.8f, 0.5f, 0.75f), 1.0f);
+
+            // Miniatura
+            if (anomalia && i == anomalia->numero_atomico && anomalia->sprites_normal[0] != NULL) {
+                al_draw_scaled_bitmap(anomalia->sprites_normal[0], 0, 0, 40, 30, item_x + 2.0f, item_y + 2.5f, 13.0f, 10.0f, 0);
+            } else {
+                al_use_transform(&trans_texto);
+                al_draw_text(fonte, cor_destaque, (item_x + 9.0f) * 2.0f, (item_y + 5.5f) * 2.0f, ALLEGRO_ALIGN_CENTRE, tabela_periodica[i].simbolo);
+                al_use_transform(&trans_ui);
+            }
+
+            al_use_transform(&trans_texto);
+            al_draw_textf(fonte, cor_texto, (item_x + 18.0f) * 2.0f, (item_y + 2.5f) * 2.0f, 0, "%s (%s)", tabela_periodica[i].nome, tabela_periodica[i].simbolo);
+            al_draw_textf(fonte, al_map_rgba_f(0.6f, 0.9f, 0.7f, 0.65f), (item_x + 18.0f) * 2.0f, (item_y + 8.5f) * 2.0f, 0, "Z=%d | %s", i, tabela_periodica[i].categoria);
+            al_draw_text(fonte, cor_destaque, (item_x + item_w - 3.0f) * 2.0f, (item_y + 5.5f) * 2.0f, ALLEGRO_ALIGN_RIGHT, "[VER]");
+            al_use_transform(&trans_ui);
+        }
+    }
+}
+
 void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item *arma_mop, Item *arma_soprador,
                     Soprador *soprador, Coletavel *refil_agua, Coletavel *bateria, Coletavel *kit_medico,
+                    Coletavel *item_scanner,
                     Projetil *projeteis, int max_proj, Particula *particulas, int max_particulas,
                     Plataforma *plataformas, int total_plat,
                     Escada *escadas, int total_escadas, Porta *portas, int total_portas,
                     Elevador *elevadores, int total_elevadores, TextoFlutuante *textos, int max_textos,
                     GameSprites *sprites, bool prop_na_frente, int estado_fade, int alpha_fade,
                     float alpha_game_over, int opcao_game_over,
+                    int modo_scanner, float tempo_scan, int elemento_foco_id, const bool *elemento_descoberto,
                     bool mostrar_hitbox, ALLEGRO_FONT *fonte, float largura_camera, float altura_camera) {
 
     bool eh_escadaria = (sala_atual >= 26 && sala_atual <= 31);
@@ -685,6 +987,18 @@ void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item 
         }
     }
 
+    if (item_scanner && item_scanner->ativo && item_scanner->sala == sala_atual) {
+        if (sprites->sprite_scanner != NULL) {
+            float x_desenho = item_scanner->x + (item_scanner->w / 2.0f) - (al_get_bitmap_width(sprites->sprite_scanner) / 2.0f);
+            float y_desenho = item_scanner->y + item_scanner->h - al_get_bitmap_height(sprites->sprite_scanner);
+            al_draw_bitmap(sprites->sprite_scanner, x_desenho, y_desenho, 0);
+        } else {
+            al_draw_filled_rectangle(item_scanner->x, item_scanner->y, item_scanner->x + item_scanner->w, item_scanner->y + item_scanner->h, al_map_rgb(80, 220, 140));
+            al_draw_rectangle(item_scanner->x, item_scanner->y, item_scanner->x + item_scanner->w, item_scanner->y + item_scanner->h, al_map_rgb(20, 80, 50), 1.0f);
+            al_draw_filled_rectangle(item_scanner->x + 2.0f, item_scanner->y + 2.0f, item_scanner->x + item_scanner->w - 2.0f, item_scanner->y + 5.0f, al_map_rgb(180, 255, 220));
+        }
+    }
+
     for (int i = 0; i < max_proj; i++) {
         if (projeteis[i].ativo) {
             if (projeteis[i].tipo == PROJETIL_AGUA) {
@@ -781,6 +1095,29 @@ void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item 
                                          faxineiro->x + faxineiro->body_w / 2.0f, chao_y, al_map_rgb(100, 150, 255));
             }
         }
+
+        if (!faxineiro->morreu && faxineiro->scanner_ativo) {
+            float body_top = (faxineiro->y + (faxineiro->h / 2.0f)) - faxineiro->body_h;
+            float olho_y = body_top + 7.0f;
+            if (tipo_frame_desenhar == FRAME_BRE) olho_y += 1.0f;
+
+            if (sprites->sprite_scanner != NULL) {
+                float sw = (float)al_get_bitmap_width(sprites->sprite_scanner);
+                float sh = (float)al_get_bitmap_height(sprites->sprite_scanner);
+                float offset_x = (faxineiro->direcao_atual == DIR_DIREITA) ? 2.0f : -2.0f;
+                al_draw_bitmap(sprites->sprite_scanner, faxineiro->x + offset_x - (sw / 2.0f), olho_y - (sh / 2.0f), flag_espelhamento);
+            } else {
+                float olho_w = 6.0f;
+                float olho_h = 3.0f;
+                float offset_x = (faxineiro->direcao_atual == DIR_DIREITA) ? 1.0f : -7.0f;
+                al_draw_filled_rectangle(faxineiro->x + offset_x, olho_y - 1.0f,
+                                         faxineiro->x + offset_x + olho_w, olho_y - 1.0f + olho_h,
+                                         al_map_rgba(80, 255, 120, 180));
+                al_draw_rectangle(faxineiro->x + offset_x, olho_y - 1.0f,
+                                  faxineiro->x + offset_x + olho_w, olho_y - 1.0f + olho_h,
+                                  al_map_rgba(150, 255, 180, 220), 1.0f);
+            }
+        }
     }
 
     // Arma EQUIPADA: desenhada na mão do personagem (independentemente de possuir o Mop ou não)
@@ -861,6 +1198,10 @@ void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item 
             al_draw_rectangle(kit_medico->x, kit_medico->y, kit_medico->x + kit_medico->w, kit_medico->y + kit_medico->h, al_map_rgb(255, 100, 100), 1.0f);
             al_draw_text(fonte, al_map_rgb(255, 100, 100), kit_medico->x + kit_medico->w / 2.0f, kit_medico->y - 10, ALLEGRO_ALIGN_CENTRE, "Kit Medico");
         }
+        if (item_scanner && item_scanner->ativo && item_scanner->sala == sala_atual) {
+            al_draw_rectangle(item_scanner->x, item_scanner->y, item_scanner->x + item_scanner->w, item_scanner->y + item_scanner->h, al_map_rgb(80, 255, 120), 1.0f);
+            al_draw_text(fonte, al_map_rgb(80, 255, 120), item_scanner->x + item_scanner->w / 2.0f, item_scanner->y - 10, ALLEGRO_ALIGN_CENTRE, "Scanner [T]");
+        }
         if (arma_soprador && arma_soprador->no_chao && arma_soprador->sala_origem == sala_atual) {
             al_draw_rectangle(arma_soprador->x - 7.0f, arma_soprador->y - 8.0f, arma_soprador->x + 9.0f, arma_soprador->y, al_map_rgb(255, 150, 50), 1.0f);
             al_draw_text(fonte, al_map_rgb(255, 150, 50), arma_soprador->x + 1.0f, arma_soprador->y - 18, ALLEGRO_ALIGN_CENTRE, "Soprador");
@@ -915,6 +1256,9 @@ void desenhar_mundo(int sala_atual, Jogador *faxineiro, Inimigo *anomalia, Item 
 
     // --- HUD Superior Esquerdo (Pixel Art + Preenchimentos Dinâmicos por Código) ---
     desenhar_hud_jogador(faxineiro, sprites);
+
+    // --- Visor / Scanner Químico (Canto Superior Direito) ---
+    desenhar_visor_scanner(modo_scanner, tempo_scan, elemento_foco_id, elemento_descoberto, anomalia, fonte);
 
     // Fade entre salas (cobre a tela inteira em camera_ui)
     if (estado_fade > 0) al_draw_filled_rectangle(0, 0, LARGURA_MAPA, ALTURA_MAPA, al_map_rgba(0, 0, 0, alpha_fade));
